@@ -33,7 +33,7 @@ const Dashboard = () => {
       <Navbar /> {/* Include Navbar */}
       <div className="bg-black text-white p-6">
         <h1 className="text-4xl mb-4">Your Dashboard</h1>
-        <h2 className="text-xl mb-8">Previously Created QR's</h2>
+        <h2 className="text-xl mb-8">Previously Created QRs</h2>
         {qrData.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full divide-y divide-gray-200">
