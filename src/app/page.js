@@ -13,7 +13,7 @@ export default function Page() {
       const qrData = localStorage.getItem("qrData")
         ? JSON.parse(localStorage.getItem("qrData"))
         : [];
-      qrData.push(inputValue);
+      qrData.push({ data: inputValue, date: new Date() }); // Store date with each QR code
       localStorage.setItem("qrData", JSON.stringify(qrData));
     }
     setQrValue(inputValue);
@@ -23,9 +23,9 @@ export default function Page() {
     <>
       <Navbar /> {/* Include Navbar */}
       <div className="bg-black text-white flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-4xl mb-8">QR Ninja</h1>
+        <h1 className="text-8xl mb-20">QR Ninja</h1>
         {qrValue && <QRCode value={qrValue} size={256} />}
-        <div className="flex mt-4">
+        <div className="flex mt-4 mb-48">
           <input
             type="text"
             placeholder="Enter link/data here"
