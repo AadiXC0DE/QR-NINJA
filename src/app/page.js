@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Page() {
   const [inputValue, setInputValue] = useState("");
@@ -9,6 +11,7 @@ export default function Page() {
 
   const handleClick = () => {
     // Store the QR code data in localStorage before setting it as the QR code value
+    toast("QR created! Visit dashboard to download.");
     if (typeof window !== "undefined") {
       const qrData = localStorage.getItem("qrData")
         ? JSON.parse(localStorage.getItem("qrData"))
@@ -22,6 +25,17 @@ export default function Page() {
   return (
     <>
       <Navbar /> {/* Include Navbar */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <div className="bg-black text-white flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-8xl mb-20">QR Ninja</h1>
         {qrValue && <QRCode value={qrValue} size={256} />}

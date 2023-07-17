@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
 import { formatDistanceToNow } from "date-fns";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Dashboard = () => {
   const [qrData, setQrData] = useState([]);
@@ -18,6 +20,8 @@ const Dashboard = () => {
   }, []);
 
   const handleDownload = (data) => {
+    toast("QR downloaded!");
+
     const canvas = document.getElementById(`canvas-${data}`);
     const img = canvas
       .toDataURL("image/png")
@@ -31,6 +35,17 @@ const Dashboard = () => {
   return (
     <>
       <Navbar /> {/* Include Navbar */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <div className="bg-black text-white p-6">
         <h1 className="text-4xl mb-4">Your Dashboard</h1>
         <h2 className="text-xl mb-8">Previously Created QRs</h2>
