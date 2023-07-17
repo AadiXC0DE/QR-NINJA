@@ -4,10 +4,27 @@ import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useCallback } from "react";
+import Particles from "react-particles";
+//import { loadFull } from "tsparticles"; // if you are going to use `loadFull`, install the "tsparticles" package too.
+import { loadSlim } from "tsparticles-slim";
 
 export default function Page() {
   const [inputValue, setInputValue] = useState("");
   const [qrValue, setQrValue] = useState("");
+
+  const particlesInit = useCallback(async (engine) => {
+    console.log(engine);
+    // you can initiate the tsParticles instance (engine) here, adding custom shapes or presets
+    // this loads the tsparticles package bundle, it's the easiest method for getting everything ready
+    // starting from v2 you can add only the features you need reducing the bundle size
+    //await loadFull(engine);
+    await loadSlim(engine);
+  }, []);
+
+  const particlesLoaded = useCallback(async (container) => {
+    await console.log(container);
+  }, []);
 
   const handleClick = () => {
     // Store the QR code data in localStorage before setting it as the QR code value
@@ -24,6 +41,55 @@ export default function Page() {
 
   return (
     <>
+      <Particles
+        id="tsparticles"
+        init={particlesInit}
+        loaded={particlesLoaded}
+        options={{
+          fpsLimit: 120,
+
+          particles: {
+            color: {
+              value: "#ffffff",
+            },
+            links: {
+              color: "#ffffff",
+              distance: 150,
+              enable: true,
+              opacity: 0.5,
+              width: 1,
+            },
+            move: {
+              direction: "none",
+              enable: true,
+              outModes: {
+                default: "bounce",
+              },
+              random: false,
+              speed: 2,
+              straight: false,
+            },
+            number: {
+              density: {
+                enable: true,
+                area: 800,
+              },
+              value: 60,
+            },
+            opacity: {
+              value: 0.8,
+            },
+            shape: {
+              type: "circle",
+            },
+            size: {
+              random: true,
+              value: 5,
+            },
+          },
+          detectRetina: true,
+        }}
+      />
       <Navbar /> {/* Include Navbar */}
       <ToastContainer
         position="top-right"
@@ -39,7 +105,7 @@ export default function Page() {
       <div className="bg-black text-white flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-8xl mb-20">QR Ninja</h1>
         {qrValue && <QRCode value={qrValue} size={256} />}
-        <div className="flex mt-4 mb-48">
+        <div className="flex mt-4 mb-64">
           <input
             type="text"
             placeholder="Enter link/data here"
