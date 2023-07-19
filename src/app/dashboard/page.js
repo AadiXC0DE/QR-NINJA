@@ -72,11 +72,15 @@ const Dashboard = () => {
                 {qrData.map((item, index) => (
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <QRCode
-                        id={`canvas-${item.data}`}
-                        value={item.data}
-                        size={64}
-                      />
+                      <div className="h-28 w-28 flex items-center justify-center">
+                        {/* The QRCode component will have a size of 1024 */}
+                        <QRCode
+                          id={`canvas-${item.data}`}
+                          value={item.data}
+                          size={1024}
+                          style={{ maxWidth: "100%", maxHeight: "100%" }}
+                        />
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {formatDistanceToNow(new Date(item.date), {
