@@ -9,7 +9,12 @@ export default function NotFound() {
         <div className="flex  items-center">
           <h1 className="text-6xl">Not found – 404!</h1>
           <div>
-            <Image src={image1} width={450} height={450} />
+            <Image
+              src={image1}
+              width={450}
+              height={450}
+              alt="Broken QR code picture"
+            />
           </div>
         </div>
       </div>
