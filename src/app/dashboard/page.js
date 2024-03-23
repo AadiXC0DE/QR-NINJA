@@ -17,7 +17,8 @@ const Dashboard = () => {
       const data = localStorage.getItem("qrData")
         ? JSON.parse(localStorage.getItem("qrData"))
         : [];
-      setQrData(data);
+      const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setQrData(sortedData);
     }
   }, []);
 
