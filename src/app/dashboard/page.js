@@ -5,9 +5,12 @@ import Navbar from "@/components/Navbar";
 import { formatDistanceToNow } from "date-fns";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { saveAs } from "file-saver";
 
 const Dashboard = () => {
   const [qrData, setQrData] = useState([]);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [selectedData, setSelectedData] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -18,17 +21,12 @@ const Dashboard = () => {
     }
   }, []);
 
-  const handleDownload = (data) => {
-    toast("QR downloaded!");
-
+  const handleDownload = (format, data) => {
     const canvas = document.getElementById(`canvas-${data}`);
-    const img = canvas
-      .toDataURL("image/png")
-      .replace("image/png", "image/octet-stream");
-    const a = document.createElement("a");
-    a.href = img;
-    a.download = "QRCode.png";
-    a.click();
+    canvas.toBlob((blob) => {
+      saveAs(blob, `QRCode.${format}`);
+      toast(`QR downloaded as ${format}!`);
+    }, `image/${format}`);
   };
 
   const handleDelete = (index) => {
@@ -77,7 +75,10 @@ const Dashboard = () => {
               </thead>
               <tbody className="divide-y divide-gray-600">
                 {qrData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-700 transition-colors">
+                  <tr
+                    key={index}
+                    className="hover:bg-gray-700 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="h-28 w-28 flex items-center justify-center">
                         <QRCode
@@ -93,31 +94,38 @@ const Dashboard = () => {
                         addSuffix: true,
                       })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap ">{item.data}</td>
-                    <td className="px-6 py-4 flex items-center justify-start gap-8">
-                      <button
-                        onClick={() => handleDownload(item.data)}
-                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-                      >
-                        Download
-                      </button>
-                      <button
-                        onClick={() => handleDelete(index)}
-                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
+                    <td className="px-6 py-4 whitespace-nowrap ">
+                      {item.data}
+                    </td>
+                    <td className="px-6 py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => {
+                            setSelectedData(item.data);
+                            setShowDownloadOptions(true);
+                          }}
+                          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
+                          Download
+                        </button>
+                        <button
+                          onClick={() => handleDelete(index)}
+                          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -128,6 +136,47 @@ const Dashboard = () => {
           <p>No QR codes found. Create one from the Home page.</p>
         )}
       </div>
+
+      {/* Download Options Modal */}
+      {showDownloadOptions && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="relative max-w-md mx-auto bg-gray-800 rounded-lg shadow-lg">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Download QR Code
+                </h3>
+                <div className="flex items-center justify-between mb-4 gap-4">
+                  <button
+                    onClick={() => handleDownload("png", selectedData)}
+                    className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    PNG
+                  </button>
+                  <button
+                    onClick={() => handleDownload("jpg", selectedData)}
+                    className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    JPG
+                  </button>
+                  <button
+                    onClick={() => handleDownload("webp", selectedData)}
+                    className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    WEBP
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowDownloadOptions(false)}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
