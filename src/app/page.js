@@ -100,6 +100,7 @@ export default function Page() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
+        theme="dark"
       />
       <div className="bg-black text-white flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-8xl mb-20">QR Ninja</h1>
