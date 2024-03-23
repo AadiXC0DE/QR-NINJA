@@ -50,6 +50,7 @@ const Dashboard = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
+        theme="dark"
       />
       <div className="bg-black text-white p-6">
         <h1 className="text-4xl mb-4">Your Dashboard</h1>
