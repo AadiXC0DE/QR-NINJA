@@ -10,7 +10,6 @@ const Dashboard = () => {
   const [qrData, setQrData] = useState([]);
 
   useEffect(() => {
-    // Check if we're in a browser
     if (typeof window !== "undefined") {
       const data = localStorage.getItem("qrData")
         ? JSON.parse(localStorage.getItem("qrData"))
@@ -32,9 +31,17 @@ const Dashboard = () => {
     a.click();
   };
 
+  const handleDelete = (index) => {
+    const updatedData = [...qrData];
+    updatedData.splice(index, 1);
+    setQrData(updatedData);
+    localStorage.setItem("qrData", JSON.stringify(updatedData));
+    toast("QR code deleted!");
+  };
+
   return (
     <>
-      <Navbar /> {/* Include Navbar */}
+      <Navbar />
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -50,30 +57,29 @@ const Dashboard = () => {
         <h1 className="text-4xl mb-4">Your Dashboard</h1>
         <h2 className="text-xl mb-8">Previously Created QRs</h2>
         {qrData.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full divide-y divide-gray-200">
-              <thead className="bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">
+          <div className="overflow-x-auto rounded-lg shadow-md">
+            <table className="w-full divide-y divide-gray-600 bg-gray-800 text-gray-100">
+              <thead>
+                <tr className="bg-gray-700">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     QR Code
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Creation Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Link
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-100 uppercase tracking-wider">
-                    Download
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                    Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-gray-700 divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-600">
                 {qrData.map((item, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={index} className="hover:bg-gray-700 transition-colors">
+                    <td className="px-6 py-4">
                       <div className="h-28 w-28 flex items-center justify-center">
-                        {/* The QRCode component will have a size of 1024 */}
                         <QRCode
                           id={`canvas-${item.data}`}
                           value={item.data}
@@ -82,18 +88,35 @@ const Dashboard = () => {
                         />
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       {formatDistanceToNow(new Date(item.date), {
                         addSuffix: true,
                       })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{item.data}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap ">{item.data}</td>
+                    <td className="px-6 py-4 flex items-center justify-start gap-8">
                       <button
                         onClick={() => handleDownload(item.data)}
-                        className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all"
+                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                       >
                         Download
+                      </button>
+                      <button
+                        onClick={() => handleDelete(index)}
+                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
                       </button>
                     </td>
                   </tr>
