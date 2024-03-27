@@ -89,7 +89,7 @@ export default function Page() {
           detectRetina: true,
         }}
       />
-      <Navbar /> {/* Include Navbar */}
+      <Navbar />
       <ToastContainer
         position="top-right"
         autoClose={5000}
