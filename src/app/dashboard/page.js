@@ -99,20 +99,20 @@ const Dashboard = () => {
                     <td className="px-6 py-4 whitespace-nowrap ">
                       {item.data}
                     </td>
-                    <td className="px-6 py-4 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <td className="px-6 py-4 justify-between">
+                      <div className="flex gap-4">
                         <button
                           onClick={() => {
                             setSelectedData(item.data);
                             setShowDownloadOptions(true);
                           }}
-                          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                          className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
                         >
                           Download
                         </button>
                         <button
                           onClick={() => handleDelete(index)}
-                          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                          className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
