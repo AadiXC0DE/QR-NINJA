@@ -10,7 +10,9 @@ import { saveAs } from "file-saver";
 const Dashboard = () => {
   const [qrData, setQrData] = useState([]);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [showEditOptions, setShowEditOptions] = useState(false);
   const [selectedData, setSelectedData] = useState("");
+  const [editingQR, setEditingQR] = useState(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -36,6 +38,37 @@ const Dashboard = () => {
     setQrData(updatedData);
     localStorage.setItem("qrData", JSON.stringify(updatedData));
     toast("QR code deleted!");
+  };
+
+  const handleEditQR = (item, index) => {
+    setEditingQR({
+      ...item,
+      index,
+      bgColor: item.bgColor || "#FFFFFF",
+      fgColor: item.fgColor || "#000000"
+    });
+    setShowEditOptions(true);
+  };
+
+  const handleColorChange = (type, color) => {
+    setEditingQR(prev => ({
+      ...prev,
+      [type]: color
+    }));
+  };
+
+  const saveQREdit = () => {
+    const updatedQRData = [...qrData];
+    updatedQRData[editingQR.index] = {
+      ...editingQR,
+      bgColor: editingQR.bgColor,
+      fgColor: editingQR.fgColor
+    };
+
+    setQrData(updatedQRData);
+    localStorage.setItem("qrData", JSON.stringify(updatedQRData));
+    setShowEditOptions(false);
+    toast("QR code updated!");
   };
 
   return (
@@ -87,6 +120,8 @@ const Dashboard = () => {
                           id={`canvas-${item.data}`}
                           value={item.data}
                           size={1024}
+                          bgColor={item.bgColor || "#FFFFFF"}
+                          fgColor={item.fgColor || "#000000"}
                           style={{ maxWidth: "100%", maxHeight: "100%" }}
                         />
                       </div>
@@ -126,6 +161,12 @@ const Dashboard = () => {
                               clipRule="evenodd"
                             />
                           </svg>
+                        </button>
+                        <button
+                          onClick={() => handleEditQR(item, index)}
+                          className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
+                        >
+                          Edit
                         </button>
                       </div>
                     </td>
@@ -174,6 +215,86 @@ const Dashboard = () => {
                 >
                   Done
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Options Modal */}
+      {showEditOptions && editingQR && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="relative max-w-4xl w-full mx-auto bg-gray-800 rounded-lg shadow-lg flex">
+              {/* Left Side - Color Controls */}
+              <div className="w-1/2 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Customize QR Code
+                </h3>
+                
+                {/* Background Color */}
+                <div className="mb-4">
+                  <label className="block text-white mb-2">Background Color</label>
+                  <div className="flex items-center">
+                    <input 
+                      type="color" 
+                      value={editingQR.bgColor}
+                      onChange={(e) => handleColorChange('bgColor', e.target.value)}
+                      className="mr-2"
+                    />
+                    <input 
+                      type="text" 
+                      value={editingQR.bgColor}
+                      onChange={(e) => handleColorChange('bgColor', e.target.value)}
+                      className="bg-gray-700 text-white p-2 rounded"
+                    />
+                  </div>
+                </div>
+
+                {/* Foreground Color */}
+                <div className="mb-4">
+                  <label className="block text-white mb-2">Foreground Color</label>
+                  <div className="flex items-center">
+                    <input 
+                      type="color" 
+                      value={editingQR.fgColor}
+                      onChange={(e) => handleColorChange('fgColor', e.target.value)}
+                      className="mr-2"
+                    />
+                    <input 
+                      type="text" 
+                      value={editingQR.fgColor}
+                      onChange={(e) => handleColorChange('fgColor', e.target.value)}
+                      className="bg-gray-700 text-white p-2 rounded"
+                    />
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <button
+                  onClick={saveQREdit}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors mt-4"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => setShowEditOptions(false)}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition-colors mt-4 ml-2"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {/* Right Side - QR Code Preview */}
+              <div className="w-1/2 p-6 flex items-center justify-center">
+                <div className="bg-white p-4 rounded-lg shadow-md">
+                  <QRCode
+                    value={editingQR.data}
+                    size={256}
+                    bgColor={editingQR.bgColor}
+                    fgColor={editingQR.fgColor}
+                  />
+                </div>
               </div>
             </div>
           </div>
