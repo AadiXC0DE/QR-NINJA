@@ -13,6 +13,9 @@ const Dashboard = () => {
   const [showEditOptions, setShowEditOptions] = useState(false);
   const [selectedData, setSelectedData] = useState("");
   const [editingQR, setEditingQR] = useState(null);
+  const [logo, setLogo] = useState(null);
+  const [isCentered, setIsCentered] = useState(true);
+  const [dimensions, setDimensions] = useState(512);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -26,10 +29,12 @@ const Dashboard = () => {
 
   const handleDownload = (format, data) => {
     const canvas = document.getElementById(`canvas-${data}`);
-    canvas.toBlob((blob) => {
-      saveAs(blob, `QRCode.${format}`);
-      toast(`QR downloaded as ${format}!`);
-    }, `image/${format}`);
+    if (canvas) {
+      canvas.toBlob((blob) => {
+        saveAs(blob, `QRCode.${format}`);
+        toast(`QR downloaded as ${format}!`);
+      }, `image/${format}`);
+    }
   };
 
   const handleDelete = (index) => {
@@ -47,6 +52,9 @@ const Dashboard = () => {
       bgColor: item.bgColor || "#FFFFFF",
       fgColor: item.fgColor || "#000000"
     });
+    setLogo(item.logo || null);
+    setIsCentered(item.isCentered !== undefined ? item.isCentered : true);
+    setDimensions(item.dimensions || 512);
     setShowEditOptions(true);
   };
 
@@ -57,18 +65,75 @@ const Dashboard = () => {
     }));
   };
 
+  const handleLogoChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogo(reader.result);
+        setIsCentered(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const toggleCenterLogo = () => {
+    setIsCentered(prev => !prev);
+  };
+
+  const handleDimensionChange = (value) => {
+    const newDimension = parseInt(value);
+    if (!isNaN(newDimension) && newDimension > 0) {
+      setDimensions(newDimension);
+    }
+  };
+
   const saveQREdit = () => {
     const updatedQRData = [...qrData];
     updatedQRData[editingQR.index] = {
       ...editingQR,
       bgColor: editingQR.bgColor,
-      fgColor: editingQR.fgColor
+      fgColor: editingQR.fgColor,
+      logo: logo,
+      isCentered: isCentered,
+      dimensions: dimensions,
+      date: new Date()
     };
 
     setQrData(updatedQRData);
     localStorage.setItem("qrData", JSON.stringify(updatedQRData));
     setShowEditOptions(false);
-    toast("QR code updated!");
+    setEditingQR(null);
+    setLogo(null);
+    toast("QR code updated successfully!");
+  };
+
+  const renderQRCode = (item) => {
+    const size = item.dimensions || 512;
+    const logoSize = Math.floor(size * 0.1875);
+
+    return (
+      <QRCode
+        id={`canvas-${item.data}`}
+        value={item.data}
+        size={size}
+        bgColor={item.bgColor || "#FFFFFF"}
+        fgColor={item.fgColor || "#000000"}
+        style={{ maxWidth: "100%", maxHeight: "100%" }}
+        imageSettings={
+          item.logo
+            ? {
+                src: item.logo,
+                height: logoSize,
+                width: logoSize,
+                excavate: true,
+                x: item.isCentered ? undefined : 0,
+                y: item.isCentered ? undefined : 0,
+              }
+            : undefined
+        }
+      />
+    );
   };
 
   return (
@@ -116,14 +181,7 @@ const Dashboard = () => {
                   >
                     <td className="px-6 py-4">
                       <div className="h-28 w-28 flex items-center justify-center">
-                        <QRCode
-                          id={`canvas-${item.data}`}
-                          value={item.data}
-                          size={1024}
-                          bgColor={item.bgColor || "#FFFFFF"}
-                          fgColor={item.fgColor || "#000000"}
-                          style={{ maxWidth: "100%", maxHeight: "100%" }}
-                        />
+                        {renderQRCode(item)}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -270,29 +328,112 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Save Button */}
-                <button
-                  onClick={saveQREdit}
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors mt-4"
-                >
-                  Save Changes
-                </button>
-                <button
-                  onClick={() => setShowEditOptions(false)}
-                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition-colors mt-4 ml-2"
-                >
-                  Cancel
-                </button>
+                {/* Logo Upload */}
+                <div className="mb-4">
+                  <label className="block text-white mb-2">Upload Logo</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleLogoChange}
+                    className="bg-gray-700 text-white p-2 rounded w-full"
+                  />
+                  {logo && (
+                    <button 
+                      onClick={() => setLogo(null)}
+                      className="mt-2 text-red-400 hover:text-red-300"
+                    >
+                      Remove Logo
+                    </button>
+                  )}
+                </div>
+
+                {/* Center Logo Option */}
+                {logo && (
+                  <div className="mb-4">
+                    <label className="flex items-center text-white">
+                      <input 
+                        type="checkbox" 
+                        checked={isCentered}
+                        onChange={toggleCenterLogo}
+                        className="mr-2"
+                      />
+                      Center Logo
+                    </label>
+                  </div>
+                )}
+
+                {/* Dimension Controls */}
+                <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+                  <label className="block text-white mb-2">QR Code Dimensions</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={dimensions}
+                      onChange={(e) => handleDimensionChange(e.target.value)}
+                      className="bg-gray-700 text-white p-2 rounded w-24"
+                      min="128"
+                      max="2048"
+                      step="32"
+                    />
+                    <span className="text-white">x</span>
+                    <input
+                      type="number"
+                      value={dimensions}
+                      onChange={(e) => handleDimensionChange(e.target.value)}
+                      className="bg-gray-700 text-white p-2 rounded w-24"
+                      min="128"
+                      max="2048"
+                      step="32"
+                    />
+                    <span className="text-white">px</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mt-1">
+                    Recommended: 128px - 2048px
+                  </p>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={saveQREdit}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowEditOptions(false);
+                      setEditingQR(null);
+                      setLogo(null);
+                    }}
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
 
               {/* Right Side - QR Code Preview */}
-              <div className="w-1/2 p-6 flex items-center justify-center">
+              <div className="w-1/2 p-6 flex items-center justify-center bg-gray-700 rounded-r-lg">
                 <div className="bg-white p-4 rounded-lg shadow-md">
                   <QRCode
                     value={editingQR.data}
-                    size={256}
+                    size={dimensions}
                     bgColor={editingQR.bgColor}
                     fgColor={editingQR.fgColor}
+                    style={{ maxWidth: "256px", maxHeight: "256px" }}
+                    imageSettings={
+                      logo
+                        ? {
+                            src: logo,
+                            height: Math.floor(dimensions * 0.1875),
+                            width: Math.floor(dimensions * 0.1875),
+                            excavate: true,
+                            x: isCentered ? undefined : 0,
+                            y: isCentered ? undefined : 0,
+                          }
+                        : undefined
+                    }
                   />
                 </div>
               </div>
