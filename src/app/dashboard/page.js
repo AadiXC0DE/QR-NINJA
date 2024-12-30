@@ -82,9 +82,29 @@ const Dashboard = () => {
   };
 
   const handleDimensionChange = (value) => {
+    if (value === '') {
+      setDimensions(''); // Allow empty input
+      return;
+    }
+
     const newDimension = parseInt(value);
-    if (!isNaN(newDimension) && newDimension > 0) {
-      setDimensions(newDimension);
+    if (!isNaN(newDimension)) {
+      if (newDimension >= 128 && newDimension <= 2048) {
+        // If within valid range, update normally
+        setDimensions(newDimension);
+      } else {
+        // If outside range, still allow typing but show visual feedback
+        setDimensions(value);
+      }
+    }
+  };
+
+  const handleDimensionBlur = () => {
+    const currentValue = parseInt(dimensions);
+    if (isNaN(currentValue) || currentValue < 128) {
+      setDimensions(128);
+    } else if (currentValue > 2048) {
+      setDimensions(2048);
     }
   };
 
@@ -370,6 +390,7 @@ const Dashboard = () => {
                       type="number"
                       value={dimensions}
                       onChange={(e) => handleDimensionChange(e.target.value)}
+                      onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
                       min="128"
                       max="2048"
@@ -380,6 +401,7 @@ const Dashboard = () => {
                       type="number"
                       value={dimensions}
                       onChange={(e) => handleDimensionChange(e.target.value)}
+                      onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
                       min="128"
                       max="2048"
