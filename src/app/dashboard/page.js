@@ -209,8 +209,16 @@ const Dashboard = () => {
                         addSuffix: true,
                       })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap ">
-                      {item.data}
+                    <td className="px-6 py-4 max-w-xs">
+                      <div className="relative group">
+                        <div className="truncate hover:text-gray-300 cursor-pointer">
+                          {item.data}
+                        </div>
+                        {/* Tooltip */}
+                        <div className="absolute hidden group-hover:block bg-gray-900 text-white p-2 rounded shadow-lg -top-12 left-0 max-w-md z-50 break-all">
+                          {item.data}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 justify-between">
                       <div className="flex gap-4">
