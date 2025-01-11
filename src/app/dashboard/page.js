@@ -205,9 +205,21 @@ const Dashboard = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {formatDistanceToNow(new Date(item.date), {
-                        addSuffix: true,
-                      })}
+                      <div className="relative group">
+                        <div className="hover:text-gray-300 cursor-default">
+                          {formatDistanceToNow(new Date(item.date), {
+                            addSuffix: true,
+                          })}
+                        </div>
+                        {/* Tooltip */}
+                        <div className="absolute hidden group-hover:block bg-gray-900 text-white p-2 rounded shadow-lg -top-12 left-0 z-50">
+                          {new Date(item.date).toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 max-w-xs">
                       <div className="relative group">
