@@ -223,7 +223,13 @@ const Dashboard = () => {
                     </td>
                     <td className="px-6 py-4 max-w-xs">
                       <div className="relative group">
-                        <div className="truncate hover:text-gray-300 cursor-pointer">
+                        <div 
+                          className="truncate hover:text-gray-300 cursor-pointer"
+                          onClick={() => {
+                            navigator.clipboard.writeText(item.data);
+                            toast("Link copied to clipboard!");
+                          }}
+                        >
                           {item.data}
                         </div>
                         {/* Tooltip */}
