@@ -30,10 +30,18 @@ const Dashboard = () => {
   const handleDownload = (format, data) => {
     const canvas = document.getElementById(`canvas-${data}`);
     if (canvas) {
-      canvas.toBlob((blob) => {
-        saveAs(blob, `QRCode.${format}`);
-        toast(`QR downloaded as ${format}!`);
-      }, `image/${format}`);
+      if (format === 'svg') {
+        // For SVG, we need to create a new SVG from the canvas
+        const svgData = canvas.outerHTML;
+        const blob = new Blob([svgData], { type: 'image/svg+xml' });
+        saveAs(blob, `QRCode.svg`);
+      } else {
+        // For other formats
+        canvas.toBlob((blob) => {
+          saveAs(blob, `QRCode.${format}`);
+          toast(`QR downloaded as ${format.toUpperCase()}!`);
+        }, `image/${format}`);
+      }
     }
   };
 
@@ -293,7 +301,7 @@ const Dashboard = () => {
                 <h3 className="text-lg font-semibold text-white mb-4">
                   Download QR Code
                 </h3>
-                <div className="flex items-center justify-between mb-4 gap-4">
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <button
                     onClick={() => handleDownload("png", selectedData)}
                     className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
@@ -311,6 +319,24 @@ const Dashboard = () => {
                     className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                   >
                     WEBP
+                  </button>
+                  <button
+                    onClick={() => handleDownload("svg", selectedData)}
+                    className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    SVG
+                  </button>
+                  <button
+                    onClick={() => handleDownload("tiff", selectedData)}
+                    className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    TIFF
+                  </button>
+                  <button
+                    onClick={() => handleDownload("bmp", selectedData)}
+                    className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                  >
+                    BMP
                   </button>
                 </div>
                 <button
