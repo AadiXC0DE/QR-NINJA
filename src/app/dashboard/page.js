@@ -354,10 +354,10 @@ const Dashboard = () => {
       {/* Edit Options Modal */}
       {showEditOptions && editingQR && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="relative max-w-4xl w-full mx-auto bg-gray-800 rounded-lg shadow-lg flex">
+          <div className="flex items-center justify-center min-h-screen px-4 py-8">
+            <div className="relative w-full max-w-4xl mx-auto bg-gray-800 rounded-lg shadow-lg flex flex-col md:flex-row">
               {/* Left Side - Color Controls */}
-              <div className="w-1/2 p-6">
+              <div className="w-full md:w-1/2 p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">
                   Customize QR Code
                 </h3>
@@ -467,10 +467,10 @@ const Dashboard = () => {
                 </div>
 
                 {/* Buttons */}
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-col sm:flex-row gap-2 mt-4">
                   <button
                     onClick={saveQREdit}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors w-full sm:w-auto"
                   >
                     Save Changes
                   </button>
@@ -480,7 +480,7 @@ const Dashboard = () => {
                       setEditingQR(null);
                       setLogo(null);
                     }}
-                    className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition-colors w-full sm:w-auto"
                   >
                     Cancel
                   </button>
@@ -488,20 +488,20 @@ const Dashboard = () => {
               </div>
 
               {/* Right Side - QR Code Preview */}
-              <div className="w-1/2 p-6 flex items-center justify-center bg-gray-700 rounded-r-lg">
-                <div className="bg-white p-4 rounded-lg shadow-md">
+              <div className="w-full md:w-1/2 p-6 flex items-center justify-center bg-gray-700 rounded-b-lg md:rounded-r-lg">
+                <div className="bg-white p-4 rounded-lg shadow-md max-w-full max-h-[400px] flex items-center justify-center">
                   <QRCode
                     value={editingQR.data}
-                    size={dimensions}
+                    size={Math.min(dimensions, 256)} // Limit preview size
                     bgColor={editingQR.bgColor}
                     fgColor={editingQR.fgColor}
-                    style={{ maxWidth: "256px", maxHeight: "256px" }}
+                    style={{ maxWidth: "100%", maxHeight: "100%" }}
                     imageSettings={
                       logo
                         ? {
                             src: logo,
-                            height: Math.floor(dimensions * 0.1875),
-                            width: Math.floor(dimensions * 0.1875),
+                            height: Math.floor(Math.min(dimensions, 256) * 0.1875),
+                            width: Math.floor(Math.min(dimensions, 256) * 0.1875),
                             excavate: true,
                             x: isCentered ? undefined : 0,
                             y: isCentered ? undefined : 0,
