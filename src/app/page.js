@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
 import { ToastContainer, toast } from "react-toastify";
@@ -11,6 +11,7 @@ import { loadSlim } from "tsparticles-slim";
 export default function Page() {
   const [inputValue, setInputValue] = useState("");
   const [qrValue, setQrValue] = useState("");
+  const qrRef = useRef(null);
 
   const particlesInit = useCallback(async (engine) => {
     await loadSlim(engine);
@@ -30,6 +31,19 @@ export default function Page() {
       localStorage.setItem("qrData", JSON.stringify(qrData));
     }
     setQrValue(inputValue);
+  };
+
+  const downloadQRCode = () => {
+    if (qrRef.current) {
+      const canvas = qrRef.current.querySelector('canvas');
+      if (canvas) {
+        const image = canvas.toDataURL("image/png");
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = 'QRCode.png';
+        link.click();
+      }
+    }
   };
 
   return (
@@ -82,7 +96,11 @@ export default function Page() {
         <h1 className="text-6xl md:text-8xl mb-10 md:mb-20 text-center">
           QR Ninja
         </h1>
-        {qrValue && <QRCode value={qrValue} size={256} />}
+        {qrValue && (
+          <div ref={qrRef}>
+            <QRCode value={qrValue} size={256} />
+          </div>
+        )}
         <div className="flex flex-col md:flex-row items-center mt-4 mb-4 md:mb-12">
           <input
             type="text"
@@ -100,17 +118,8 @@ export default function Page() {
         </div>
         {qrValue && (
           <button
-            onClick={() => {
-              var canvas = document.getElementsByTagName("canvas")[0];
-              var img = canvas
-                .toDataURL("image/png")
-                .replace("image/png", "image/octet-stream");
-              var a = document.createElement("a");
-              a.href = img;
-              a.download = "QRCode.png";
-              a.click();
-            }}
-            className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all"
+            onClick={downloadQRCode}
+            className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all mt-4"
           >
             Download QR Code
           </button>
