@@ -1,11 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
 import { formatDistanceToNow } from "date-fns";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { saveAs } from "file-saver";
+import { debounce } from "lodash";
 
 const Dashboard = () => {
   const [qrData, setQrData] = useState([]);
@@ -89,23 +90,35 @@ const Dashboard = () => {
     setIsCentered(prev => !prev);
   };
 
+  // memoized debounced function
+  const debouncedSetDimensions = useMemo(
+    () => debounce((value) => {
+      const newValue = parseInt(value);
+      if (!isNaN(newValue) && newValue >= 128 && newValue <= 2048) {
+        setDimensions(newValue);
+      }
+    }, 300),
+    []
+  );
+
+  // Validation handler
   const handleDimensionChange = (value) => {
     if (value === '') {
-      setDimensions(''); // Allow empty input
+      setDimensions('');
       return;
     }
 
-    const newDimension = parseInt(value);
-    if (!isNaN(newDimension)) {
-      if (newDimension >= 128 && newDimension <= 2048) {
-        // If within valid range, update normally
-        setDimensions(newDimension);
-      } else {
-        // If outside range, still allow typing but show visual feedback
-        setDimensions(value);
-      }
-    }
+    setDimensions(value);
+
+    debouncedSetDimensions(value);
   };
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetDimensions.cancel();
+    };
+  }, [debouncedSetDimensions]);
 
   const handleDimensionBlur = () => {
     const currentValue = parseInt(dimensions);
@@ -136,7 +149,7 @@ const Dashboard = () => {
     toast("QR code updated successfully!");
   };
 
-  const renderQRCode = (item) => {
+  const renderQRCode = useMemo(() => (item) => {
     const size = item.dimensions || 512;
     const logoSize = Math.floor(size * 0.1875);
 
@@ -162,7 +175,7 @@ const Dashboard = () => {
         }
       />
     );
-  };
+  }, []);
 
   return (
     <>
@@ -518,5 +531,7 @@ const Dashboard = () => {
     </>
   );
 };
+
+Dashboard.displayName = "Dashboard";
 
 export default Dashboard;
