@@ -1,11 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
 import { formatDistanceToNow } from "date-fns";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { saveAs } from "file-saver";
+import { debounce } from "lodash";
 
 const Dashboard = () => {
   const [qrData, setQrData] = useState([]);
@@ -116,6 +117,13 @@ const Dashboard = () => {
     }
   };
 
+  const debouncedDimensionChange = useCallback(
+    debounce((value) => {
+      handleDimensionChange(value);
+    }, 300),
+    [handleDimensionChange]
+  );
+
   const saveQREdit = () => {
     const updatedQRData = [...qrData];
     updatedQRData[editingQR.index] = {
@@ -136,7 +144,7 @@ const Dashboard = () => {
     toast("QR code updated successfully!");
   };
 
-  const renderQRCode = (item) => {
+  const renderQRCode = useMemo(() => (item) => {
     const size = item.dimensions || 512;
     const logoSize = Math.floor(size * 0.1875);
 
@@ -162,7 +170,7 @@ const Dashboard = () => {
         }
       />
     );
-  };
+  }, []);
 
   return (
     <>
@@ -441,7 +449,7 @@ const Dashboard = () => {
                     <input
                       type="number"
                       value={dimensions}
-                      onChange={(e) => handleDimensionChange(e.target.value)}
+                      onChange={(e) => debouncedDimensionChange(e.target.value)}
                       onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
                       min="128"
@@ -452,7 +460,7 @@ const Dashboard = () => {
                     <input
                       type="number"
                       value={dimensions}
-                      onChange={(e) => handleDimensionChange(e.target.value)}
+                      onChange={(e) => debouncedDimensionChange(e.target.value)}
                       onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
                       min="128"
@@ -518,5 +526,7 @@ const Dashboard = () => {
     </>
   );
 };
+
+Dashboard.displayName = "Dashboard";
 
 export default Dashboard;
