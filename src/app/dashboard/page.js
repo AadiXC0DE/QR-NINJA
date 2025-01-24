@@ -149,32 +149,34 @@ const Dashboard = () => {
     toast("QR code updated successfully!");
   };
 
-  const renderQRCode = useMemo(() => (item) => {
-    const size = item.dimensions || 512;
-    const logoSize = Math.floor(size * 0.1875);
+  const renderQRCode = useMemo(() => {
+    return function renderQRCode(item) {
+      const size = item.dimensions || 512;
+      const logoSize = Math.floor(size * 0.1875);
 
-    return (
-      <QRCode
-        id={`canvas-${item.data}`}
-        value={item.data}
-        size={size}
-        bgColor={item.bgColor || "#FFFFFF"}
-        fgColor={item.fgColor || "#000000"}
-        style={{ maxWidth: "100%", maxHeight: "100%" }}
-        imageSettings={
-          item.logo
-            ? {
-                src: item.logo,
-                height: logoSize,
-                width: logoSize,
-                excavate: true,
-                x: item.isCentered ? undefined : 0,
-                y: item.isCentered ? undefined : 0,
-              }
-            : undefined
-        }
-      />
-    );
+      return (
+        <QRCode
+          id={`canvas-${item.data}`}
+          value={item.data}
+          size={size}
+          bgColor={item.bgColor || "#FFFFFF"}
+          fgColor={item.fgColor || "#000000"}
+          style={{ maxWidth: "100%", maxHeight: "100%" }}
+          imageSettings={
+            item.logo
+              ? {
+                  src: item.logo,
+                  height: logoSize,
+                  width: logoSize,
+                  excavate: true,
+                  x: item.isCentered ? undefined : 0,
+                  y: item.isCentered ? undefined : 0,
+                }
+              : undefined
+          }
+        />
+      );
+    };
   }, []);
 
   return (
@@ -531,6 +533,8 @@ const Dashboard = () => {
     </>
   );
 };
+
+Dashboard.displayName = "Dashboard";
 
 Dashboard.displayName = "Dashboard";
 
