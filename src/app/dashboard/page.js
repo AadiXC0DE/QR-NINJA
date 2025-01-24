@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
 import { formatDistanceToNow } from "date-fns";
@@ -136,7 +136,7 @@ const Dashboard = () => {
     toast("QR code updated successfully!");
   };
 
-  const renderQRCode = (item) => {
+  const renderQRCode = useMemo(() => (item) => {
     const size = item.dimensions || 512;
     const logoSize = Math.floor(size * 0.1875);
 
@@ -162,7 +162,7 @@ const Dashboard = () => {
         }
       />
     );
-  };
+  }, []);
 
   return (
     <>
