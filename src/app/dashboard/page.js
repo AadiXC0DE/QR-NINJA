@@ -90,23 +90,35 @@ const Dashboard = () => {
     setIsCentered(prev => !prev);
   };
 
+  // memoized debounced function
+  const debouncedSetDimensions = useMemo(
+    () => debounce((value) => {
+      const newValue = parseInt(value);
+      if (!isNaN(newValue) && newValue >= 128 && newValue <= 2048) {
+        setDimensions(newValue);
+      }
+    }, 300),
+    []
+  );
+
+  // Validation handler
   const handleDimensionChange = (value) => {
     if (value === '') {
-      setDimensions(''); // Allow empty input
+      setDimensions('');
       return;
     }
 
-    const newDimension = parseInt(value);
-    if (!isNaN(newDimension)) {
-      if (newDimension >= 128 && newDimension <= 2048) {
-        // If within valid range, update normally
-        setDimensions(newDimension);
-      } else {
-        // If outside range, still allow typing but show visual feedback
-        setDimensions(value);
-      }
-    }
+    setDimensions(value);
+
+    debouncedSetDimensions(value);
   };
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetDimensions.cancel();
+    };
+  }, [debouncedSetDimensions]);
 
   const handleDimensionBlur = () => {
     const currentValue = parseInt(dimensions);
@@ -116,13 +128,6 @@ const Dashboard = () => {
       setDimensions(2048);
     }
   };
-
-  const debouncedDimensionChange = useCallback(
-    debounce((value) => {
-      handleDimensionChange(value);
-    }, 300),
-    [handleDimensionChange]
-  );
 
   const saveQREdit = () => {
     const updatedQRData = [...qrData];
@@ -449,7 +454,7 @@ const Dashboard = () => {
                     <input
                       type="number"
                       value={dimensions}
-                      onChange={(e) => debouncedDimensionChange(e.target.value)}
+                      onChange={(e) => handleDimensionChange(e.target.value)}
                       onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
                       min="128"
@@ -460,7 +465,7 @@ const Dashboard = () => {
                     <input
                       type="number"
                       value={dimensions}
-                      onChange={(e) => debouncedDimensionChange(e.target.value)}
+                      onChange={(e) => handleDimensionChange(e.target.value)}
                       onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
                       min="128"
