@@ -121,7 +121,7 @@ const Dashboard = () => {
     debounce((value) => {
       handleDimensionChange(value);
     }, 300),
-    []
+    [handleDimensionChange]
   );
 
   const saveQREdit = () => {
@@ -449,7 +449,7 @@ const Dashboard = () => {
                     <input
                       type="number"
                       value={dimensions}
-                      onChange={(e) => handleDimensionChange(e.target.value)}
+                      onChange={(e) => debouncedDimensionChange(e.target.value)}
                       onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
                       min="128"
@@ -460,7 +460,7 @@ const Dashboard = () => {
                     <input
                       type="number"
                       value={dimensions}
-                      onChange={(e) => handleDimensionChange(e.target.value)}
+                      onChange={(e) => debouncedDimensionChange(e.target.value)}
                       onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
                       min="128"
@@ -526,5 +526,7 @@ const Dashboard = () => {
     </>
   );
 };
+
+Dashboard.displayName = "Dashboard";
 
 export default Dashboard;
