@@ -132,13 +132,8 @@ const QRList = memo(({ data, onEdit, onDelete, onDownload }) => {
 
 const Dashboard = () => {
   const [qrData, setQrData] = useState([]);
-  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-  const [showEditOptions, setShowEditOptions] = useState(false);
-  const [selectedData, setSelectedData] = useState("");
-  const [editingQR, setEditingQR] = useState(null);
-  const [logo, setLogo] = useState(null);
-  const [isCentered, setIsCentered] = useState(true);
-  const [dimensions, setDimensions] = useState(512);
+  const [modalState, dispatchModal] = useReducer(modalReducer, initialModalState);
+  const [customization, setCustomization] = useState(initialQRCustomization);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -177,97 +172,65 @@ const Dashboard = () => {
   };
 
   const handleEditQR = (item, index) => {
-    setEditingQR({
-      ...item,
-      index,
+    setCustomization({
+      logo: item.logo || null,
+      isCentered: item.isCentered ?? true,
+      dimensions: item.dimensions || 512,
       bgColor: item.bgColor || "#FFFFFF",
       fgColor: item.fgColor || "#000000"
     });
-    setLogo(item.logo || null);
-    setIsCentered(item.isCentered !== undefined ? item.isCentered : true);
-    setDimensions(item.dimensions || 512);
-    setShowEditOptions(true);
+    dispatchModal({ type: 'OPEN_EDIT', payload: { ...item, index } });
   };
 
-  const handleColorChange = (type, color) => {
-    setEditingQR(prev => ({
+  const handleCustomizationChange = useCallback((key, value) => {
+    setCustomization(prev => ({
       ...prev,
-      [type]: color
+      [key]: value
     }));
-  };
-
-  const handleLogoChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogo(reader.result);
-        setIsCentered(true);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const toggleCenterLogo = () => {
-    setIsCentered(prev => !prev);
-  };
+  }, []);
 
   // memoized debounced function
   const debouncedSetDimensions = useMemo(
     () => debounce((value) => {
       const newValue = parseInt(value);
       if (!isNaN(newValue) && newValue >= 128 && newValue <= 2048) {
-        setDimensions(newValue);
+        handleCustomizationChange('dimensions', newValue);
       }
     }, 300),
-    []
+    [handleCustomizationChange]
   );
 
-  // Validation handler
   const handleDimensionChange = (value) => {
     if (value === '') {
-      setDimensions('');
+      handleCustomizationChange('dimensions', '');
       return;
     }
-
-    setDimensions(value);
-
+    handleCustomizationChange('dimensions', value);
     debouncedSetDimensions(value);
   };
 
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
-      debouncedSetDimensions.cancel();
-    };
-  }, [debouncedSetDimensions]);
-
   const handleDimensionBlur = () => {
-    const currentValue = parseInt(dimensions);
+    const currentValue = parseInt(customization.dimensions);
     if (isNaN(currentValue) || currentValue < 128) {
-      setDimensions(128);
+      handleCustomizationChange('dimensions', 128);
     } else if (currentValue > 2048) {
-      setDimensions(2048);
+      handleCustomizationChange('dimensions', 2048);
     }
   };
 
   const saveQREdit = () => {
+    const { data: editingQR } = modalState.edit;
     const updatedQRData = [...qrData];
     updatedQRData[editingQR.index] = {
       ...editingQR,
-      bgColor: editingQR.bgColor,
-      fgColor: editingQR.fgColor,
-      logo: logo,
-      isCentered: isCentered,
-      dimensions: dimensions,
+      ...customization,
       date: new Date()
     };
 
     setQrData(updatedQRData);
     localStorage.setItem("qrData", JSON.stringify(updatedQRData));
-    setShowEditOptions(false);
-    setEditingQR(null);
-    setLogo(null);
+    dispatchModal({ type: 'CLOSE_EDIT' });
+    setCustomization(initialQRCustomization);
     toast("QR code updated successfully!");
   };
 
@@ -322,7 +285,7 @@ const Dashboard = () => {
       </div>
 
       {/* Download Options Modal */}
-      {showDownloadOptions && (
+      {modalState.download.isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
             <div className="relative max-w-md mx-auto bg-gray-800 rounded-lg shadow-lg">
@@ -332,44 +295,44 @@ const Dashboard = () => {
                 </h3>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <button
-                    onClick={() => handleDownload("png", selectedData)}
+                    onClick={() => handleDownload("png", modalState.download.selectedData)}
                     className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                   >
                     PNG
                   </button>
                   <button
-                    onClick={() => handleDownload("jpg", selectedData)}
+                    onClick={() => handleDownload("jpg", modalState.download.selectedData)}
                     className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                   >
                     JPG
                   </button>
                   <button
-                    onClick={() => handleDownload("webp", selectedData)}
+                    onClick={() => handleDownload("webp", modalState.download.selectedData)}
                     className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                   >
                     WEBP
                   </button>
                   <button
-                    onClick={() => handleDownload("svg", selectedData)}
+                    onClick={() => handleDownload("svg", modalState.download.selectedData)}
                     className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                   >
                     SVG
                   </button>
                   <button
-                    onClick={() => handleDownload("tiff", selectedData)}
+                    onClick={() => handleDownload("tiff", modalState.download.selectedData)}
                     className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                   >
                     TIFF
                   </button>
                   <button
-                    onClick={() => handleDownload("bmp", selectedData)}
+                    onClick={() => handleDownload("bmp", modalState.download.selectedData)}
                     className="bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
                   >
                     BMP
                   </button>
                 </div>
                 <button
-                  onClick={() => setShowDownloadOptions(false)}
+                  onClick={() => dispatchModal({ type: 'CLOSE_DOWNLOAD' })}
                   className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
                 >
                   Done
@@ -381,7 +344,7 @@ const Dashboard = () => {
       )}
 
       {/* Edit Options Modal */}
-      {showEditOptions && editingQR && (
+      {modalState.edit.isOpen && modalState.edit.data && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 py-8">
             <div className="relative w-full max-w-4xl mx-auto bg-gray-800 rounded-lg shadow-lg flex flex-col md:flex-row">
@@ -397,14 +360,14 @@ const Dashboard = () => {
                   <div className="flex items-center">
                     <input 
                       type="color" 
-                      value={editingQR.bgColor}
-                      onChange={(e) => handleColorChange('bgColor', e.target.value)}
+                      value={customization.bgColor}
+                      onChange={(e) => handleCustomizationChange('bgColor', e.target.value)}
                       className="mr-2"
                     />
                     <input 
                       type="text" 
-                      value={editingQR.bgColor}
-                      onChange={(e) => handleColorChange('bgColor', e.target.value)}
+                      value={customization.bgColor}
+                      onChange={(e) => handleCustomizationChange('bgColor', e.target.value)}
                       className="bg-gray-700 text-white p-2 rounded"
                     />
                   </div>
@@ -416,14 +379,14 @@ const Dashboard = () => {
                   <div className="flex items-center">
                     <input 
                       type="color" 
-                      value={editingQR.fgColor}
-                      onChange={(e) => handleColorChange('fgColor', e.target.value)}
+                      value={customization.fgColor}
+                      onChange={(e) => handleCustomizationChange('fgColor', e.target.value)}
                       className="mr-2"
                     />
                     <input 
                       type="text" 
-                      value={editingQR.fgColor}
-                      onChange={(e) => handleColorChange('fgColor', e.target.value)}
+                      value={customization.fgColor}
+                      onChange={(e) => handleCustomizationChange('fgColor', e.target.value)}
                       className="bg-gray-700 text-white p-2 rounded"
                     />
                   </div>
@@ -435,12 +398,21 @@ const Dashboard = () => {
                   <input 
                     type="file" 
                     accept="image/*" 
-                    onChange={handleLogoChange}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          handleCustomizationChange('logo', reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
                     className="bg-gray-700 text-white p-2 rounded w-full"
                   />
-                  {logo && (
+                  {customization.logo && (
                     <button 
-                      onClick={() => setLogo(null)}
+                      onClick={() => handleCustomizationChange('logo', null)}
                       className="mt-2 text-red-400 hover:text-red-300"
                     >
                       Remove Logo
@@ -449,13 +421,13 @@ const Dashboard = () => {
                 </div>
 
                 {/* Center Logo Option */}
-                {logo && (
+                {customization.logo && (
                   <div className="mb-4">
                     <label className="flex items-center text-white">
                       <input 
                         type="checkbox" 
-                        checked={isCentered}
-                        onChange={toggleCenterLogo}
+                        checked={customization.isCentered}
+                        onChange={(e) => handleCustomizationChange('isCentered', e.target.checked)}
                         className="mr-2"
                       />
                       Center Logo
@@ -469,7 +441,7 @@ const Dashboard = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      value={dimensions}
+                      value={customization.dimensions}
                       onChange={(e) => handleDimensionChange(e.target.value)}
                       onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
@@ -480,7 +452,7 @@ const Dashboard = () => {
                     <span className="text-white">x</span>
                     <input
                       type="number"
-                      value={dimensions}
+                      value={customization.dimensions}
                       onChange={(e) => handleDimensionChange(e.target.value)}
                       onBlur={handleDimensionBlur}
                       className="bg-gray-700 text-white p-2 rounded w-24"
@@ -504,11 +476,7 @@ const Dashboard = () => {
                     Save Changes
                   </button>
                   <button
-                    onClick={() => {
-                      setShowEditOptions(false);
-                      setEditingQR(null);
-                      setLogo(null);
-                    }}
+                    onClick={() => dispatchModal({ type: 'CLOSE_EDIT' })}
                     className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition-colors w-full sm:w-auto"
                   >
                     Cancel
@@ -520,20 +488,20 @@ const Dashboard = () => {
               <div className="w-full md:w-1/2 p-6 flex items-center justify-center bg-gray-700 rounded-b-lg md:rounded-r-lg">
                 <div className="bg-white p-4 rounded-lg shadow-md max-w-full max-h-[400px] flex items-center justify-center">
                   <QRCode
-                    value={editingQR.data}
-                    size={Math.min(dimensions, 256)} // Limit preview size
-                    bgColor={editingQR.bgColor}
-                    fgColor={editingQR.fgColor}
+                    value={modalState.edit.data.data}
+                    size={Math.min(customization.dimensions, 256)} // Limit preview size
+                    bgColor={customization.bgColor}
+                    fgColor={customization.fgColor}
                     style={{ maxWidth: "100%", maxHeight: "100%" }}
                     imageSettings={
-                      logo
+                      customization.logo
                         ? {
-                            src: logo,
-                            height: Math.floor(Math.min(dimensions, 256) * 0.1875),
-                            width: Math.floor(Math.min(dimensions, 256) * 0.1875),
+                            src: customization.logo,
+                            height: Math.floor(Math.min(customization.dimensions, 256) * 0.1875),
+                            width: Math.floor(Math.min(customization.dimensions, 256) * 0.1875),
                             excavate: true,
-                            x: isCentered ? undefined : 0,
-                            y: isCentered ? undefined : 0,
+                            x: customization.isCentered ? undefined : 0,
+                            y: customization.isCentered ? undefined : 0,
                           }
                         : undefined
                     }
@@ -547,8 +515,6 @@ const Dashboard = () => {
     </>
   );
 };
-
-Dashboard.displayName = "Dashboard";
 
 Dashboard.displayName = "Dashboard";
 
