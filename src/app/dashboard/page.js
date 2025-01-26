@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
 import { formatDistanceToNow } from "date-fns";
@@ -7,6 +7,128 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { saveAs } from "file-saver";
 import { debounce } from "lodash";
+
+const QRCodeRenderer = memo(({ item }) => {
+  const size = item.dimensions || 512;
+  const logoSize = Math.floor(size * 0.1875);
+
+  return (
+    <QRCode
+      id={`canvas-${item.data}`}
+      value={item.data}
+      size={size}
+      bgColor={item.bgColor || "#FFFFFF"}
+      fgColor={item.fgColor || "#000000"}
+      style={{ maxWidth: "100%", maxHeight: "100%" }}
+      imageSettings={
+        item.logo
+          ? {
+              src: item.logo,
+              height: logoSize,
+              width: logoSize,
+              excavate: true,
+              x: item.isCentered ? undefined : 0,
+              y: item.isCentered ? undefined : 0,
+            }
+          : undefined
+      }
+    />
+  );
+});
+
+const QRListItem = memo(({ item, index, onEdit, onDelete, onDownload }) => {
+  const handleCopy = () => {
+    navigator.clipboard.writeText(item.data);
+    toast("Link copied to clipboard!");
+  };
+
+  return (
+    <tr className="hover:bg-gray-700 transition-colors">
+      <td className="px-6 py-4">
+        <div className="h-28 w-28 flex items-center justify-center">
+          <QRCodeRenderer item={item} />
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="relative group">
+          <div className="hover:text-gray-300 cursor-default">
+            {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+          </div>
+          <div className="absolute hidden group-hover:block bg-gray-900 text-white p-2 rounded shadow-lg -top-12 left-0 z-50">
+            {new Date(item.date).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'numeric',
+              year: 'numeric'
+            })}
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4 max-w-xs">
+        <div className="relative group">
+          <div 
+            className="truncate hover:text-gray-300 cursor-pointer"
+            onClick={handleCopy}
+          >
+            {item.data}
+          </div>
+          <div className="absolute hidden group-hover:block bg-gray-900 text-white p-2 rounded shadow-lg -top-12 left-0 max-w-md z-50 break-all">
+            {item.data}
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4 justify-between">
+        <div className="flex gap-4">
+          <button
+            onClick={() => onDownload(item.data)}
+            className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
+          >
+            Download
+          </button>
+          <button
+            onClick={() => onDelete(index)}
+            className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={() => onEdit(item, index)}
+            className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
+          >
+            Edit
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+});
+
+const QRList = memo(({ data, onEdit, onDelete, onDownload }) => {
+  return (
+    <tbody className="divide-y divide-gray-600">
+      {data.map((item, index) => (
+        <QRListItem
+          key={item.data}
+          item={item}
+          index={index}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onDownload={onDownload}
+        />
+      ))}
+    </tbody>
+  );
+});
 
 const Dashboard = () => {
   const [qrData, setQrData] = useState([]);
@@ -149,36 +271,6 @@ const Dashboard = () => {
     toast("QR code updated successfully!");
   };
 
-  const renderQRCode = useMemo(() => {
-    return function renderQRCode(item) {
-      const size = item.dimensions || 512;
-      const logoSize = Math.floor(size * 0.1875);
-
-      return (
-        <QRCode
-          id={`canvas-${item.data}`}
-          value={item.data}
-          size={size}
-          bgColor={item.bgColor || "#FFFFFF"}
-          fgColor={item.fgColor || "#000000"}
-          style={{ maxWidth: "100%", maxHeight: "100%" }}
-          imageSettings={
-            item.logo
-              ? {
-                  src: item.logo,
-                  height: logoSize,
-                  width: logoSize,
-                  excavate: true,
-                  x: item.isCentered ? undefined : 0,
-                  y: item.isCentered ? undefined : 0,
-                }
-              : undefined
-          }
-        />
-      );
-    };
-  }, []);
-
   return (
     <>
       <Navbar />
@@ -216,90 +308,12 @@ const Dashboard = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-600">
-                {qrData.map((item, index) => (
-                  <tr
-                    key={index}
-                    className="hover:bg-gray-700 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="h-28 w-28 flex items-center justify-center">
-                        {renderQRCode(item)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="relative group">
-                        <div className="hover:text-gray-300 cursor-default">
-                          {formatDistanceToNow(new Date(item.date), {
-                            addSuffix: true,
-                          })}
-                        </div>
-                        {/* Tooltip */}
-                        <div className="absolute hidden group-hover:block bg-gray-900 text-white p-2 rounded shadow-lg -top-12 left-0 z-50">
-                          {new Date(item.date).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs">
-                      <div className="relative group">
-                        <div 
-                          className="truncate hover:text-gray-300 cursor-pointer"
-                          onClick={() => {
-                            navigator.clipboard.writeText(item.data);
-                            toast("Link copied to clipboard!");
-                          }}
-                        >
-                          {item.data}
-                        </div>
-                        {/* Tooltip */}
-                        <div className="absolute hidden group-hover:block bg-gray-900 text-white p-2 rounded shadow-lg -top-12 left-0 max-w-md z-50 break-all">
-                          {item.data}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 justify-between">
-                      <div className="flex gap-4">
-                        <button
-                          onClick={() => {
-                            setSelectedData(item.data);
-                            setShowDownloadOptions(true);
-                          }}
-                          className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
-                        >
-                          Download
-                        </button>
-                        <button
-                          onClick={() => handleDelete(index)}
-                          className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleEditQR(item, index)}
-                          className="bg-white p-1 px-4 text-black hover:bg-gray-200 transition-all rounded-md"
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+              <QRList 
+                data={qrData}
+                onEdit={handleEditQR}
+                onDelete={handleDelete}
+                onDownload={(data) => dispatchModal({ type: 'OPEN_DOWNLOAD', payload: data })}
+              />
             </table>
           </div>
         ) : (
