@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { saveAs } from "file-saver";
+import html2canvas from "html2canvas";
 import { QR_TYPE_CONFIG } from "@/utils/qrDataEncoders";
 
 const initialModalState = {
@@ -64,17 +65,46 @@ const Dashboard = () => {
     );
   }, [qrData, searchQuery]);
 
-  const handleDownload = (format, data) => {
-    const canvas = document.getElementById(`canvas-${data}`);
-    if (!canvas) return;
-    if (format === 'svg') {
-      const blob = new Blob([canvas.outerHTML], { type: 'image/svg+xml' });
-      saveAs(blob, `QRCode.svg`);
-    } else {
-      canvas.toBlob(blob => {
-        saveAs(blob, `QRCode.${format}`);
-        toast.success(`Downloaded as ${format.toUpperCase()}`);
-      }, `image/${format}`);
+  const handleDownload = async (format, index) => {
+    const container = qrRefs.current[index];
+    if (!container) {
+      toast.error("QR code not found");
+      return;
+    }
+
+    try {
+      // Find the styled QR wrapper inside the container
+      const qrWrapper = container.querySelector('div');
+      if (!qrWrapper) return;
+
+      // Use html2canvas to capture the full styled container
+      const canvas = await html2canvas(qrWrapper, {
+        backgroundColor: null,
+        scale: 2, // Higher quality
+        useCORS: true,
+        logging: false,
+      });
+
+      if (format === 'svg') {
+        // For SVG, we fall back to just the QR canvas data
+        const qrCanvas = container.querySelector('canvas');
+        if (qrCanvas) {
+          const dataUrl = qrCanvas.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = dataUrl;
+          link.download = 'QRCode.png';
+          link.click();
+          toast.success('Downloaded as PNG (SVG not available for styled QR)');
+        }
+      } else {
+        canvas.toBlob(blob => {
+          saveAs(blob, `QRCode.${format}`);
+          toast.success(`Downloaded as ${format.toUpperCase()}`);
+        }, `image/${format}`);
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Download failed');
     }
   };
 
@@ -165,8 +195,51 @@ const Dashboard = () => {
               return (
                 <div key={index} className="group bg-zinc-900/40 backdrop-blur-xl rounded-[32px] border border-zinc-800/50 overflow-hidden hover:border-zinc-700 transition-all duration-500 hover:translate-y-[-4px]">
                   <div className="p-8 flex justify-center bg-transparent" ref={el => qrRefs.current[index] = el}>
-                    <div className="p-5 rounded-3xl shadow-2xl transition-transform duration-500 group-hover:scale-105" style={{ backgroundColor: item.bgColor || '#FFFFFF' }}>
-                      <QRCode id={`canvas-${item.data}`} value={item.data} size={160} bgColor={item.bgColor || "#FFFFFF"} fgColor={item.fgColor || "#000000"} level="H" />
+                    <div 
+                      className={`p-5 rounded-3xl shadow-2xl transition-transform duration-500 group-hover:scale-105 ${
+                        item.frameStyle === 'simple' ? 'border-4' :
+                        item.frameStyle === 'rounded' ? 'border-4 rounded-[40px]' :
+                        item.frameStyle === 'shadow' ? 'shadow-2xl shadow-black/50' : ''
+                      }`}
+                      style={{ 
+                        backgroundColor: item.bgColor || '#FFFFFF',
+                        borderColor: item.frameColor || item.fgColor || '#000000'
+                      }}
+                    >
+                      {/* CTA Top */}
+                      {item.ctaText && item.ctaPosition === 'top' && (
+                        <p className="text-center font-bold text-xs mb-2" style={{ color: item.fgColor || '#000000' }}>
+                          {item.ctaText}
+                        </p>
+                      )}
+                      
+                      <QRCode 
+                        id={`canvas-${item.data}`} 
+                        value={item.data} 
+                        size={140} 
+                        bgColor={item.bgColor || "#FFFFFF"} 
+                        fgColor={item.fgColor || "#000000"} 
+                        level={item.errorCorrection || "M"}
+                        imageSettings={
+                          item.logo
+                            ? {
+                                src: item.logo,
+                                height: Math.floor(140 * (item.logoSize || 20) / 100),
+                                width: Math.floor(140 * (item.logoSize || 20) / 100),
+                                excavate: true,
+                                x: item.logoPosition === 'corner' ? 5 : undefined,
+                                y: item.logoPosition === 'corner' ? 5 : undefined,
+                              }
+                            : undefined
+                        }
+                      />
+                      
+                      {/* CTA Bottom */}
+                      {item.ctaText && (item.ctaPosition || 'bottom') === 'bottom' && (
+                        <p className="text-center font-bold text-xs mt-2" style={{ color: item.fgColor || '#000000' }}>
+                          {item.ctaText}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
@@ -183,7 +256,7 @@ const Dashboard = () => {
                     
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => dispatchModal({ type: 'OPEN_DOWNLOAD', payload: item.data })}
+                        onClick={() => dispatchModal({ type: 'OPEN_DOWNLOAD', payload: index })}
                         className="flex-1 py-3 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-all shadow-lg active:scale-95"
                       >
                         Download
@@ -223,9 +296,9 @@ const Dashboard = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-sm bg-zinc-900/80 backdrop-blur-2xl rounded-[40px] border border-zinc-800 p-8 shadow-2xl">
             <h3 className="text-2xl font-bold mb-8">Export</h3>
-            <div className="grid grid-cols-2 gap-3 mb-8">
-              {['png', 'jpg', 'webp', 'svg'].map(fmt => (
-                <button key={fmt} onClick={() => handleDownload(fmt, modalState.download.selectedData)} className="py-4 bg-zinc-800 hover:bg-white hover:text-black font-bold rounded-2xl transition-all uppercase text-xs tracking-widest">{fmt}</button>
+            <div className="grid grid-cols-3 gap-3 mb-8">
+              {['png', 'jpg', 'webp'].map(fmt => (
+                <button key={fmt} onClick={() => { handleDownload(fmt, modalState.download.selectedData); dispatchModal({ type: 'CLOSE_DOWNLOAD' }); }} className="py-4 bg-zinc-800 hover:bg-white hover:text-black font-bold rounded-2xl transition-all uppercase text-xs tracking-widest">{fmt}</button>
               ))}
             </div>
             <button onClick={() => dispatchModal({ type: 'CLOSE_DOWNLOAD' })} className="w-full py-4 text-zinc-500 hover:text-white font-bold transition-all">Cancel</button>
