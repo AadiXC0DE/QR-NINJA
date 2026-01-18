@@ -95,6 +95,14 @@ const Dashboard = () => {
     setCustomization(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const handleTemplateSelect = (template) => {
+    setCustomization(prev => ({
+      ...prev,
+      bgColor: template.bgColor,
+      fgColor: template.fgColor
+    }));
+  };
+
   const saveQREdit = () => {
     const { data: editingQR } = modalState.edit;
     const updatedQRData = [...qrData];
