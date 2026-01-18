@@ -9,51 +9,28 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { saveAs } from "file-saver";
 import { debounce } from "lodash";
-import { QR_TYPES } from "@/utils/qrDataEncoders";
+import { QR_TYPE_CONFIG } from "@/utils/qrDataEncoders";
 
 const initialModalState = {
-  download: {
-    isOpen: false,
-    selectedData: null
-  },
-  edit: {
-    isOpen: false,
-    data: null
-  }
+  download: { isOpen: false, selectedData: null },
+  edit: { isOpen: false, data: null }
 };
 
 const initialQRCustomization = {
   logo: null,
   isCentered: true,
-  dimensions: 512,
+  dimensions: 400,
   bgColor: "#FFFFFF",
   fgColor: "#000000"
 };
 
 const modalReducer = (state, action) => {
   switch (action.type) {
-    case 'OPEN_DOWNLOAD':
-      return {
-        ...state,
-        download: { isOpen: true, selectedData: action.payload }
-      };
-    case 'CLOSE_DOWNLOAD':
-      return {
-        ...state,
-        download: { isOpen: false, selectedData: null }
-      };
-    case 'OPEN_EDIT':
-      return {
-        ...state,
-        edit: { isOpen: true, data: action.payload }
-      };
-    case 'CLOSE_EDIT':
-      return {
-        ...state,
-        edit: { isOpen: false, data: null }
-      };
-    default:
-      return state;
+    case 'OPEN_DOWNLOAD': return { ...state, download: { isOpen: true, selectedData: action.payload } };
+    case 'CLOSE_DOWNLOAD': return { ...state, download: { isOpen: false, selectedData: null } };
+    case 'OPEN_EDIT': return { ...state, edit: { isOpen: true, data: action.payload } };
+    case 'CLOSE_EDIT': return { ...state, edit: { isOpen: false, data: null } };
+    default: return state;
   }
 };
 
@@ -66,599 +43,220 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const data = localStorage.getItem("qrData")
-        ? JSON.parse(localStorage.getItem("qrData"))
-        : [];
-      const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-      setQrData(sortedData);
+      const data = localStorage.getItem("qrData") ? JSON.parse(localStorage.getItem("qrData")) : [];
+      setQrData(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
     }
   }, []);
 
-  // Filter QR codes based on search
   const filteredQrData = useMemo(() => {
     if (!searchQuery.trim()) return qrData;
-    
     const query = searchQuery.toLowerCase();
-    return qrData.filter((item) => {
-      const dataMatch = item.data?.toLowerCase().includes(query);
-      const typeMatch = item.type?.toLowerCase().includes(query);
-      const dateMatch = new Date(item.date).toLocaleDateString().includes(query);
-      return dataMatch || typeMatch || dateMatch;
-    });
+    return qrData.filter(item => 
+      item.data?.toLowerCase().includes(query) || 
+      item.type?.toLowerCase().includes(query)
+    );
   }, [qrData, searchQuery]);
 
   const handleDownload = (format, data) => {
     const canvas = document.getElementById(`canvas-${data}`);
-    if (canvas) {
-      if (format === 'svg') {
-        const svgData = canvas.outerHTML;
-        const blob = new Blob([svgData], { type: 'image/svg+xml' });
-        saveAs(blob, `QRCode.svg`);
-      } else {
-        canvas.toBlob((blob) => {
-          saveAs(blob, `QRCode.${format}`);
-          toast(`QR downloaded as ${format.toUpperCase()}!`);
-        }, `image/${format}`);
-      }
+    if (!canvas) return;
+    if (format === 'svg') {
+      const blob = new Blob([canvas.outerHTML], { type: 'image/svg+xml' });
+      saveAs(blob, `QRCode.svg`);
+    } else {
+      canvas.toBlob(blob => {
+        saveAs(blob, `QRCode.${format}`);
+        toast.success(`Downloaded as ${format.toUpperCase()}`);
+      }, `image/${format}`);
     }
   };
 
   const handleDelete = (index) => {
-    const originalIndex = qrData.findIndex((item) => item === filteredQrData[index]);
-    const updatedData = [...qrData];
-    updatedData.splice(originalIndex, 1);
+    const target = filteredQrData[index];
+    const updatedData = qrData.filter(item => item !== target);
     setQrData(updatedData);
     localStorage.setItem("qrData", JSON.stringify(updatedData));
-    toast("QR code deleted!");
+    toast.success("Code removed");
   };
 
-  const handleEditQR = (item, index) => {
+  const handleEditQR = (item) => {
+    const originalIndex = qrData.indexOf(item);
     setCustomization({
       logo: item.logo || null,
       isCentered: item.isCentered ?? true,
-      dimensions: item.dimensions || 512,
+      dimensions: item.dimensions || 400,
       bgColor: item.bgColor || "#FFFFFF",
       fgColor: item.fgColor || "#000000"
     });
-    const originalIndex = qrData.findIndex((qr) => qr === item);
     dispatchModal({ type: 'OPEN_EDIT', payload: { ...item, index: originalIndex } });
   };
 
   const handleCustomizationChange = useCallback((key, value) => {
-    setCustomization(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    setCustomization(prev => ({ ...prev, [key]: value }));
   }, []);
-
-  const debouncedSetDimensions = useMemo(
-    () => debounce((value) => {
-      const newValue = parseInt(value);
-      if (!isNaN(newValue) && newValue >= 128 && newValue <= 2048) {
-        handleCustomizationChange('dimensions', newValue);
-      }
-    }, 300),
-    [handleCustomizationChange]
-  );
-
-  const handleDimensionChange = (value) => {
-    if (value === '') {
-      handleCustomizationChange('dimensions', '');
-      return;
-    }
-    handleCustomizationChange('dimensions', value);
-    debouncedSetDimensions(value);
-  };
-
-  const handleDimensionBlur = () => {
-    const currentValue = parseInt(customization.dimensions);
-    if (isNaN(currentValue) || currentValue < 128) {
-      handleCustomizationChange('dimensions', 128);
-    } else if (currentValue > 2048) {
-      handleCustomizationChange('dimensions', 2048);
-    }
-  };
-
-  const handleTemplateSelect = (template) => {
-    setCustomization(prev => ({
-      ...prev,
-      bgColor: template.bgColor,
-      fgColor: template.fgColor
-    }));
-  };
 
   const saveQREdit = () => {
     const { data: editingQR } = modalState.edit;
     const updatedQRData = [...qrData];
-    updatedQRData[editingQR.index] = {
-      ...editingQR,
-      ...customization,
-      date: new Date()
-    };
-
+    updatedQRData[editingQR.index] = { ...editingQR, ...customization, date: new Date() };
     setQrData(updatedQRData);
     localStorage.setItem("qrData", JSON.stringify(updatedQRData));
     dispatchModal({ type: 'CLOSE_EDIT' });
-    setCustomization(initialQRCustomization);
-    toast("QR code updated successfully!");
-  };
-
-  const getQRTypeLabel = (type) => {
-    return QR_TYPES[type]?.label || "URL / Text";
-  };
-
-  const getQRTypeIcon = (type) => {
-    return QR_TYPES[type]?.icon || "🔗";
-  };
-
-  const renderQRCode = useMemo(() => {
-    return function renderQRCode(item) {
-      const size = item.dimensions || 512;
-      const logoSize = Math.floor(size * 0.1875);
-
-      return (
-        <QRCode
-          id={`canvas-${item.data}`}
-          value={item.data}
-          size={size}
-          bgColor={item.bgColor || "#FFFFFF"}
-          fgColor={item.fgColor || "#000000"}
-          style={{ maxWidth: "100%", maxHeight: "100%" }}
-          imageSettings={
-            item.logo
-              ? {
-                  src: item.logo,
-                  height: logoSize,
-                  width: logoSize,
-                  excavate: true,
-                  x: item.isCentered ? undefined : 0,
-                  y: item.isCentered ? undefined : 0,
-                }
-              : undefined
-          }
-        />
-      );
-    };
-  }, []);
-
-  const clearAllQRCodes = () => {
-    if (window.confirm("Are you sure you want to delete all QR codes? This action cannot be undone.")) {
-      setQrData([]);
-      localStorage.setItem("qrData", JSON.stringify([]));
-      toast("All QR codes deleted!");
-    }
+    toast.success("Updated successfully");
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
       <Navbar />
       <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
+        position="top-center" autoClose={2000} hideProgressBar newestOnTop theme="dark"
+        toastStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '12px' }}
       />
-      <div className="bg-black text-white p-6 min-h-screen">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      
+      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-20">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16">
           <div>
-            <h1 className="text-4xl font-bold">Your Dashboard</h1>
-            <p className="text-gray-400 mt-1">
-              {qrData.length} QR code{qrData.length !== 1 ? 's' : ''} saved
-            </p>
+            <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-4">
+              Vault <span className="text-zinc-500 font-medium tracking-normal italic">History</span>
+            </h1>
+            <p className="text-zinc-500 font-medium">Manage and refine your previously generated ninja codes.</p>
           </div>
-          {qrData.length > 0 && (
-            <button
-              onClick={clearAllQRCodes}
-              className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Clear All
-            </button>
-          )}
-        </div>
-
-        {/* Search Bar */}
-        {qrData.length > 0 && (
-          <div className="mb-6">
-            <div className="relative max-w-md">
-              <input
-                type="text"
-                placeholder="Search QR codes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-3 pl-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-white focus:outline-none transition-colors"
-              />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+          
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="relative flex-1 md:w-80 group">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 transition-colors group-focus-within:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              )}
+              <input
+                type="text" placeholder="Search codes..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-6 py-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/50 focus:border-zinc-700 focus:outline-none transition-all"
+              />
             </div>
-            {searchQuery && (
-              <p className="text-gray-500 text-sm mt-2">
-                Found {filteredQrData.length} result{filteredQrData.length !== 1 ? 's' : ''}
-              </p>
-            )}
           </div>
-        )}
+        </header>
 
         {filteredQrData.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg shadow-md">
-            <table className="w-full divide-y divide-gray-600 bg-gray-800 text-gray-100">
-              <thead>
-                <tr className="bg-gray-700">
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    QR Code
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Data
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-600">
-                {filteredQrData.map((item, index) => (
-                  <tr
-                    key={index}
-                    className="hover:bg-gray-700 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div 
-                        className="h-28 w-28 flex items-center justify-center"
-                        ref={el => qrRefs.current[index] = el}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredQrData.map((item, index) => {
+              const config = QR_TYPE_CONFIG[item.type] || QR_TYPE_CONFIG.url;
+              return (
+                <div key={index} className="group bg-zinc-900/40 backdrop-blur-xl rounded-[32px] border border-zinc-800/50 overflow-hidden hover:border-zinc-700 transition-all duration-500 hover:translate-y-[-4px]">
+                  <div className="p-8 flex justify-center bg-transparent" ref={el => qrRefs.current[index] = el}>
+                    <div className="p-5 rounded-3xl shadow-2xl transition-transform duration-500 group-hover:scale-105" style={{ backgroundColor: item.bgColor || '#FFFFFF' }}>
+                      <QRCode id={`canvas-${item.data}`} value={item.data} size={160} bgColor={item.bgColor || "#FFFFFF"} fgColor={item.fgColor || "#000000"} level="H" />
+                    </div>
+                  </div>
+                  
+                  <div className="px-8 pb-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2 px-3 py-1 bg-zinc-800/50 rounded-full border border-zinc-700/30">
+                        <span className="text-zinc-500 scale-75">{config.icon}</span>
+                        <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400">{config.label}</span>
+                      </div>
+                      <span className="text-[10px] text-zinc-600 font-medium">{formatDistanceToNow(new Date(item.date), { addSuffix: true })}</span>
+                    </div>
+                    
+                    <h3 className="text-sm text-zinc-300 font-medium truncate mb-6" title={item.data}>{item.data}</h3>
+                    
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => dispatchModal({ type: 'OPEN_DOWNLOAD', payload: item.data })}
+                        className="flex-1 py-3 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-all shadow-lg active:scale-95"
                       >
-                        {renderQRCode(item)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-gray-700">
-                        <span>{getQRTypeIcon(item.type)}</span>
-                        <span>{getQRTypeLabel(item.type)}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="relative group">
-                        <div className="hover:text-gray-300 cursor-default">
-                          {formatDistanceToNow(new Date(item.date), {
-                            addSuffix: true,
-                          })}
-                        </div>
-                        <div className="absolute hidden group-hover:block bg-gray-900 text-white p-2 rounded shadow-lg -top-12 left-0 z-50">
-                          {new Date(item.date).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs">
-                      <div className="relative group">
-                        <div 
-                          className="truncate hover:text-gray-300 cursor-pointer"
-                          onClick={() => {
-                            navigator.clipboard.writeText(item.data);
-                            toast("Copied to clipboard!");
-                          }}
-                        >
-                          {item.data}
-                        </div>
-                        <div className="absolute hidden group-hover:block bg-gray-900 text-white p-2 rounded shadow-lg -top-12 left-0 max-w-md z-50 break-all">
-                          {item.data}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2 flex-wrap">
-                        <button
-                          onClick={() => {
-                            dispatchModal({ type: 'OPEN_DOWNLOAD', payload: item.data });
-                          }}
-                          className="bg-white p-2 px-3 text-black hover:bg-gray-200 transition-all rounded-md text-sm"
-                        >
-                          Download
-                        </button>
-                        <button
-                          onClick={() => handleEditQR(item, index)}
-                          className="bg-gray-600 p-2 px-3 text-white hover:bg-gray-500 transition-all rounded-md text-sm"
-                        >
-                          Edit
-                        </button>
-                        <ShareButton 
-                          qrRef={{ current: qrRefs.current[index] }} 
-                          data={item.data} 
-                        />
-                        <button
-                          onClick={() => handleDelete(index)}
-                          className="bg-red-600 p-2 text-white hover:bg-red-500 transition-all rounded-md"
-                          title="Delete"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : qrData.length > 0 && filteredQrData.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">No QR codes match your search.</p>
-            <button
-              onClick={() => setSearchQuery("")}
-              className="mt-4 text-white underline hover:text-gray-300"
-            >
-              Clear search
-            </button>
+                        Download
+                      </button>
+                      <button
+                        onClick={() => handleEditQR(item)}
+                        className="p-3 bg-zinc-800 text-zinc-400 rounded-xl hover:bg-zinc-700 hover:text-white transition-all active:scale-95"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(index)}
+                        className="p-3 bg-zinc-900 border border-zinc-800 text-zinc-600 rounded-xl hover:border-red-500/50 hover:text-red-500 transition-all active:scale-95"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">No QR codes found. Create one from the Home page.</p>
-            <a href="/" className="inline-block mt-4 bg-white text-black px-6 py-2 rounded-lg hover:bg-gray-200 transition-all">
-              Create QR Code
-            </a>
+          <div className="py-32 flex flex-col items-center justify-center text-center">
+            <div className="w-24 h-24 bg-zinc-900 rounded-[40px] flex items-center justify-center mb-8 border border-zinc-800">
+              <svg className="w-10 h-10 text-zinc-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">No codes found</h2>
+            <p className="text-zinc-600 mb-8 max-w-xs">Start creating ninja codes and they will be safely stored in your local vault.</p>
+            <a href="/" className="px-8 py-3.5 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-all">Create New</a>
           </div>
         )}
       </div>
 
-      {/* Download Options Modal */}
+      {/* Download Modal - Same Premium Aesthetic */}
       {modalState.download.isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="relative max-w-md w-full mx-auto bg-gray-800 rounded-lg shadow-xl">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Download QR Code
-                </h3>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  {['png', 'jpg', 'webp', 'svg', 'tiff', 'bmp'].map((format) => (
-                    <button
-                      key={format}
-                      onClick={() => handleDownload(format, modalState.download.selectedData)}
-                      className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-colors uppercase"
-                    >
-                      {format}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => dispatchModal({ type: 'CLOSE_DOWNLOAD' })}
-                  className="w-full bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  Close
-                </button>
-              </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-sm bg-zinc-900/80 backdrop-blur-2xl rounded-[40px] border border-zinc-800 p-8 shadow-2xl">
+            <h3 className="text-2xl font-bold mb-8">Export</h3>
+            <div className="grid grid-cols-2 gap-3 mb-8">
+              {['png', 'jpg', 'webp', 'svg'].map(fmt => (
+                <button key={fmt} onClick={() => handleDownload(fmt, modalState.download.selectedData)} className="py-4 bg-zinc-800 hover:bg-white hover:text-black font-bold rounded-2xl transition-all uppercase text-xs tracking-widest">{fmt}</button>
+              ))}
             </div>
+            <button onClick={() => dispatchModal({ type: 'CLOSE_DOWNLOAD' })} className="w-full py-4 text-zinc-500 hover:text-white font-bold transition-all">Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Edit Options Modal */}
+      {/* Edit Modal - Same Premium Aesthetic */}
       {modalState.edit.isOpen && modalState.edit.data && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm">
-          <div className="flex items-center justify-center min-h-screen px-4 py-8">
-            <div className="relative w-full max-w-4xl mx-auto bg-gray-800 rounded-lg shadow-xl flex flex-col md:flex-row">
-              {/* Left Side - Controls */}
-              <div className="w-full md:w-1/2 p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Customize QR Code
-                </h3>
-                
-                {/* Style Templates */}
-                <div className="mb-6">
-                  <label className="block text-white mb-2 text-sm">Quick Templates</label>
-                  <StyleTemplates
-                    onSelectTemplate={handleTemplateSelect}
-                    currentBgColor={customization.bgColor}
-                    currentFgColor={customization.fgColor}
-                  />
-                </div>
-
-                {/* Background Color */}
-                <div className="mb-4">
-                  <label className="block text-white mb-2">Background Color</label>
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="color" 
-                      value={customization.bgColor}
-                      onChange={(e) => handleCustomizationChange('bgColor', e.target.value)}
-                      className="w-10 h-10 rounded cursor-pointer"
-                    />
-                    <input 
-                      type="text" 
-                      value={customization.bgColor}
-                      onChange={(e) => handleCustomizationChange('bgColor', e.target.value)}
-                      className="bg-gray-700 text-white p-2 rounded flex-1"
-                    />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-fadeIn overflow-y-auto">
+          <div className="w-full max-w-4xl bg-zinc-900 rounded-[40px] border border-zinc-800 shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh]">
+            <div className="flex-1 p-8 overflow-y-auto no-scrollbar">
+              <h3 className="text-2xl font-bold mb-8">Refine <span className="text-zinc-500">Code</span></h3>
+              <div className="space-y-10">
+                <StyleTemplates onSelectTemplate={handleTemplateSelect} currentBgColor={customization.bgColor} currentFgColor={customization.fgColor} />
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-2">Background</label>
+                    <div className="flex gap-2">
+                       <input type="color" value={customization.bgColor} onChange={e => handleCustomizationChange('bgColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer bg-transparent" />
+                       <input type="text" value={customization.bgColor} onChange={e => handleCustomizationChange('bgColor', e.target.value)} className="flex-1 bg-zinc-800 rounded-xl px-4 text-xs font-mono" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-2">Foreground</label>
+                    <div className="flex gap-2">
+                       <input type="color" value={customization.fgColor} onChange={e => handleCustomizationChange('fgColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer bg-transparent" />
+                       <input type="text" value={customization.fgColor} onChange={e => handleCustomizationChange('fgColor', e.target.value)} className="flex-1 bg-zinc-800 rounded-xl px-4 text-xs font-mono" />
+                    </div>
                   </div>
                 </div>
-
-                {/* Foreground Color */}
-                <div className="mb-4">
-                  <label className="block text-white mb-2">Foreground Color</label>
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="color" 
-                      value={customization.fgColor}
-                      onChange={(e) => handleCustomizationChange('fgColor', e.target.value)}
-                      className="w-10 h-10 rounded cursor-pointer"
-                    />
-                    <input 
-                      type="text" 
-                      value={customization.fgColor}
-                      onChange={(e) => handleCustomizationChange('fgColor', e.target.value)}
-                      className="bg-gray-700 text-white p-2 rounded flex-1"
-                    />
-                  </div>
-                </div>
-
-                {/* Logo Upload */}
-                <div className="mb-4">
-                  <label className="block text-white mb-2">Upload Logo</label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          handleCustomizationChange('logo', reader.result);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="bg-gray-700 text-white p-2 rounded w-full text-sm"
-                  />
-                  {customization.logo && (
-                    <button 
-                      onClick={() => handleCustomizationChange('logo', null)}
-                      className="mt-2 text-red-400 hover:text-red-300 text-sm"
-                    >
-                      Remove Logo
-                    </button>
-                  )}
-                </div>
-
-                {/* Center Logo Option */}
-                {customization.logo && (
-                  <div className="mb-4">
-                    <label className="flex items-center text-white cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={customization.isCentered}
-                        onChange={(e) => handleCustomizationChange('isCentered', e.target.checked)}
-                        className="mr-2 w-4 h-4"
-                      />
-                      Center Logo
-                    </label>
-                  </div>
-                )}
-
-                {/* Dimension Controls */}
-                <div className="mb-6 p-4 bg-gray-700 rounded-lg">
-                  <label className="block text-white mb-2">Dimensions</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={customization.dimensions}
-                      onChange={(e) => handleDimensionChange(e.target.value)}
-                      onBlur={handleDimensionBlur}
-                      className="bg-gray-600 text-white p-2 rounded w-24"
-                      min="128"
-                      max="2048"
-                      step="32"
-                    />
-                    <span className="text-gray-400">x</span>
-                    <input
-                      type="number"
-                      value={customization.dimensions}
-                      onChange={(e) => handleDimensionChange(e.target.value)}
-                      onBlur={handleDimensionBlur}
-                      className="bg-gray-600 text-white p-2 rounded w-24"
-                      min="128"
-                      max="2048"
-                      step="32"
-                    />
-                    <span className="text-gray-400">px</span>
-                  </div>
-                  <p className="text-gray-400 text-xs mt-1">128px - 2048px</p>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={saveQREdit}
-                    className="flex-1 bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    onClick={() => dispatchModal({ type: 'CLOSE_EDIT' })}
-                    className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
+                <div className="flex gap-3">
+                  <button onClick={saveQREdit} className="flex-1 py-4 bg-white text-black font-bold rounded-2xl">Save Changes</button>
+                  <button onClick={() => dispatchModal({ type: 'CLOSE_EDIT' })} className="px-8 py-4 bg-zinc-800 font-bold rounded-2xl">Cancel</button>
                 </div>
               </div>
-
-              {/* Right Side - QR Code Preview */}
-              <div className="w-full md:w-1/2 p-6 flex items-center justify-center bg-gray-700 rounded-b-lg md:rounded-r-lg md:rounded-bl-none">
-                <div 
-                  className="p-6 rounded-lg shadow-lg"
-                  style={{ backgroundColor: customization.bgColor }}
-                >
-                  <QRCode
-                    value={modalState.edit.data.data}
-                    size={Math.min(customization.dimensions, 256)}
-                    bgColor={customization.bgColor}
-                    fgColor={customization.fgColor}
-                    style={{ maxWidth: "100%", maxHeight: "100%" }}
-                    imageSettings={
-                      customization.logo
-                        ? {
-                            src: customization.logo,
-                            height: Math.floor(Math.min(customization.dimensions, 256) * 0.1875),
-                            width: Math.floor(Math.min(customization.dimensions, 256) * 0.1875),
-                            excavate: true,
-                            x: customization.isCentered ? undefined : 0,
-                            y: customization.isCentered ? undefined : 0,
-                          }
-                        : undefined
-                    }
-                  />
-                </div>
+            </div>
+            <div className="flex-1 bg-zinc-800/30 flex items-center justify-center p-12">
+              <div className="p-8 rounded-[40px] shadow-2xl" style={{ backgroundColor: customization.bgColor }}>
+                <QRCode value={modalState.edit.data.data} size={240} bgColor={customization.bgColor} fgColor={customization.fgColor} level="H" />
               </div>
             </div>
           </div>
         </div>
       )}
-    </>
+
+      <style jsx>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
+      `}</style>
+    </div>
   );
 };
-
-Dashboard.displayName = "Dashboard";
 
 export default Dashboard;

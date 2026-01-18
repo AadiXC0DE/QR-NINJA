@@ -34,10 +34,6 @@ export default function Page() {
     await loadSlim(engine);
   }, []);
 
-  const particlesLoaded = useCallback(async (container) => {
-    // Particles loaded
-  }, []);
-
   const generateQRData = () => {
     switch (qrType) {
       case "url":
@@ -82,7 +78,6 @@ export default function Page() {
       setBatchQRs(lines);
       setQrValue("");
 
-      // Save all to localStorage
       if (typeof window !== "undefined") {
         const qrData = localStorage.getItem("qrData")
           ? JSON.parse(localStorage.getItem("qrData"))
@@ -100,8 +95,7 @@ export default function Page() {
         
         localStorage.setItem("qrData", JSON.stringify(qrData));
       }
-
-      toast.success(`${lines.length} QR codes created! Visit dashboard to manage.`);
+      toast.success(`${lines.length} QR codes generated!`);
       return;
     }
 
@@ -114,7 +108,6 @@ export default function Page() {
     setQrValue(data);
     setBatchQRs([]);
 
-    // Save to localStorage
     if (typeof window !== "undefined") {
       const qrData = localStorage.getItem("qrData")
         ? JSON.parse(localStorage.getItem("qrData"))
@@ -129,8 +122,7 @@ export default function Page() {
       });
       localStorage.setItem("qrData", JSON.stringify(qrData));
     }
-
-    toast.success("QR code created! Visit dashboard to manage.");
+    toast.success("QR code generated!");
   };
 
   const downloadQRCode = () => {
@@ -147,7 +139,6 @@ export default function Page() {
   };
 
   const downloadAllBatch = async () => {
-    // Simple individual download for batch
     const canvases = document.querySelectorAll(".batch-qr-canvas canvas");
     canvases.forEach((canvas, index) => {
       const image = canvas.toDataURL("image/png");
@@ -174,177 +165,155 @@ export default function Page() {
   };
 
   return (
-    <>
+    <div className="h-screen flex flex-col bg-black text-white relative overflow-hidden">
       <Particles
         id="tsparticles"
         init={particlesInit}
-        loaded={particlesLoaded}
         options={{
           fpsLimit: 120,
           particles: {
-            color: { value: "#ffffff" },
-            links: {
-              color: "#ffffff",
-              distance: 150,
-              enable: true,
-              opacity: 0.5,
-              width: 1,
-            },
-            move: {
-              direction: "none",
-              enable: true,
-              outModes: { default: "bounce" },
-              random: false,
-              speed: 2,
-              straight: false,
-            },
-            number: { density: { enable: true, area: 800 }, value: 60 },
-            opacity: { value: 0.8 },
+            color: { value: "#333333" },
+            links: { color: "#333333", distance: 150, enable: true, opacity: 0.2, width: 1 },
+            move: { direction: "none", enable: true, outModes: { default: "bounce" }, random: false, speed: 0.8, straight: false },
+            number: { density: { enable: true, area: 1000 }, value: 30 },
+            opacity: { value: 0.3 },
             shape: { type: "circle" },
-            size: { random: true, value: 5 },
+            size: { random: true, value: 2 },
           },
           detectRetina: true,
         }}
+        className="absolute inset-0 pointer-events-none"
       />
+      
       <Navbar />
+      
       <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
+        position="top-right" autoClose={3000} hideProgressBar newestOnTop closeOnClick draggable theme="dark"
+        toastStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '12px' }}
       />
-      <div className="bg-black text-white flex flex-col items-center justify-start min-h-screen pt-8 pb-16 px-4">
-        <h1 className="text-5xl md:text-7xl mb-6 text-center font-bold">
-          QR Ninja
-        </h1>
-        <p className="text-gray-400 mb-8 text-center max-w-xl">
-          Free, privacy-first QR code generator. All processing happens in your browser.
-        </p>
+      
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative z-10 w-full max-w-[1600px] mx-auto">
+        {/* Left Panel: Configuration */}
+        <section className="flex-1 overflow-y-auto px-6 py-8 lg:px-12 flex flex-col no-scrollbar">
+          <div className="mb-8">
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-2">
+              Create <span className="text-white/40 font-medium italic">Your QR</span>
+            </h1>
+            <p className="text-zinc-500 font-medium">Configure and customize your ninja code.</p>
+          </div>
 
-        {/* QR Type Selector */}
-        <QRTypeSelector selectedType={qrType} onTypeChange={handleTypeChange} />
+          <QRTypeSelector selectedType={qrType} onTypeChange={handleTypeChange} />
 
-        {/* Dynamic Form Fields */}
-        <div className="w-full flex justify-center mb-6">
-          <QRFormFields
-            type={qrType}
-            formData={formData}
-            onChange={setFormData}
-          />
-        </div>
-
-        {/* Style Templates */}
-        <div className="mb-6">
-          <StyleTemplates
-            onSelectTemplate={handleTemplateSelect}
-            currentBgColor={customization.bgColor}
-            currentFgColor={customization.fgColor}
-          />
-        </div>
-
-        {/* Create Button */}
-        <button
-          className="py-3 px-8 bg-white text-black font-semibold rounded-lg hover:bg-gray-200 transition-all text-lg mb-8 hover:scale-105"
-          onClick={handleCreate}
-        >
-          {qrType === "batch" ? "Generate All QR Codes" : "Generate QR Code"}
-        </button>
-
-        {/* Single QR Display */}
-        {qrValue && qrType !== "batch" && (
-          <div className="flex flex-col items-center gap-4 animate-fadeIn">
-            <div 
-              ref={qrRef} 
-              className="bg-white p-4 rounded-xl shadow-2xl"
-              style={{ backgroundColor: customization.bgColor }}
-            >
-              <QRCode
-                value={qrValue}
-                size={256}
-                bgColor={customization.bgColor}
-                fgColor={customization.fgColor}
-              />
+          <div className="flex-1 flex flex-col gap-10">
+            <div className="bg-zinc-900/30 backdrop-blur-xl rounded-3xl p-6 lg:p-8 border border-zinc-800/50 shadow-2xl">
+              <QRFormFields type={qrType} formData={formData} onChange={setFormData} />
+              
+              <div className="mt-8">
+                <StyleTemplates
+                  onSelectTemplate={handleTemplateSelect}
+                  currentBgColor={customization.bgColor}
+                  currentFgColor={customization.fgColor}
+                />
+              </div>
             </div>
-            <div className="flex gap-3 flex-wrap justify-center">
+
+            <div className="flex justify-start pb-8">
               <button
-                onClick={downloadQRCode}
-                className="bg-white text-black py-2 px-6 rounded-lg hover:bg-gray-200 transition-all flex items-center gap-2"
+                onClick={handleCreate}
+                className="px-10 py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 
+                         transition-all duration-300 flex items-center gap-3 active:scale-[0.98]"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                {qrType === "batch" ? "Generate Batch" : "Generate Code"}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
-                Download PNG
               </button>
-              <ShareButton qrRef={qrRef} data={qrValue} />
             </div>
           </div>
-        )}
+        </section>
 
-        {/* Batch QR Display */}
-        {batchQRs.length > 0 && (
-          <div className="w-full max-w-4xl animate-fadeIn">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">
-                Generated {batchQRs.length} QR Codes
-              </h2>
-              <button
-                onClick={downloadAllBatch}
-                className="bg-white text-black py-2 px-4 rounded-lg hover:bg-gray-200 transition-all flex items-center gap-2"
+        {/* Right Panel: Preview */}
+        <section className="lg:w-[450px] xl:w-[500px] bg-zinc-950/80 backdrop-blur-3xl border-l border-zinc-900 border-t lg:border-t-0 p-8 flex flex-col items-center justify-center animate-fadeIn">
+          {qrValue && qrType !== "batch" ? (
+            <div className="w-full flex flex-col items-center gap-10">
+              <div 
+                ref={qrRef} 
+                className="p-8 rounded-[40px] shadow-2xl relative transition-transform duration-500 hover:scale-[1.02]"
+                style={{ backgroundColor: customization.bgColor }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download All
-              </button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {batchQRs.map((data, index) => (
-                <div
-                  key={index}
-                  className="batch-qr-canvas bg-gray-800 p-3 rounded-lg flex flex-col items-center"
+                {/* Visual Polish: Inner shadow/glow */}
+                <div className="absolute inset-0 rounded-[40px] shadow-[inset_0_0_80px_rgba(0,0,0,0.05)] pointer-events-none" />
+                <QRCode
+                  value={qrValue}
+                  size={260}
+                  bgColor={customization.bgColor}
+                  fgColor={customization.fgColor}
+                  renderAs="canvas"
+                  level="H"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-3 w-full max-w-[280px]">
+                <button
+                  onClick={downloadQRCode}
+                  className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-2xl 
+                           transition-all duration-300 flex items-center justify-center gap-3"
                 >
-                  <div 
-                    className="bg-white p-2 rounded mb-2"
-                    style={{ backgroundColor: customization.bgColor }}
-                  >
-                    <QRCode
-                      value={data}
-                      size={100}
-                      bgColor={customization.bgColor}
-                      fgColor={customization.fgColor}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 truncate w-full text-center" title={data}>
-                    {data.length > 20 ? data.substring(0, 20) + "..." : data}
-                  </p>
-                </div>
-              ))}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download PNG
+                </button>
+                <ShareButton qrRef={qrRef} data={qrValue} />
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          ) : batchQRs.length > 0 ? (
+            <div className="w-full h-full overflow-y-auto no-scrollbar flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold">Generated <span className="text-zinc-500">({batchQRs.length})</span></h2>
+                <button
+                  onClick={downloadAllBatch}
+                  className="text-sm px-4 py-2 bg-white text-black font-bold rounded-xl active:scale-95 transition-all"
+                >
+                  Download All
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {batchQRs.map((data, index) => (
+                  <div
+                    key={index}
+                    className="batch-qr-canvas bg-zinc-900/50 p-4 rounded-3xl border border-zinc-800/50 flex flex-col items-center gap-3"
+                  >
+                    <div style={{ backgroundColor: customization.bgColor }} className="p-2 rounded-xl">
+                      <QRCode value={data} size={100} bgColor={customization.bgColor} fgColor={customization.fgColor} />
+                    </div>
+                    <p className="text-[10px] text-zinc-600 truncate w-full text-center px-2">{data}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center space-y-4 px-12">
+              <div className="w-20 h-20 mx-auto bg-zinc-900 rounded-[32px] flex items-center justify-center border border-zinc-800">
+                <svg className="w-10 h-10 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-1">Live Preview</h3>
+                <p className="text-zinc-600 text-sm">Your generated QR Ninja code will appear here instantly.</p>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
 
       <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .animate-fadeIn { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
       `}</style>
-    </>
+    </div>
   );
 }
