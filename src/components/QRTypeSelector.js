@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { QR_TYPE_CONFIG } from "@/utils/qrDataEncoders";
+import { QR_TYPE_CONFIG } from '@/utils/qrDataEncoders';
 
 /**
  * QR Type Selector - Compact premium tab-based selector
@@ -16,9 +16,10 @@ const QRTypeSelector = ({ selectedType, onTypeChange }) => {
             className={`
               relative flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium
               transition-all duration-300 text-sm whitespace-nowrap min-w-fit flex-1
-              ${selectedType === type
-                ? "bg-white text-black shadow-lg"
-                : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
+              ${
+                selectedType === type
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
               }
             `}
           >
@@ -27,7 +28,7 @@ const QRTypeSelector = ({ selectedType, onTypeChange }) => {
           </button>
         ))}
       </div>
-      
+
       {/* Scroll indicator for mobile */}
       <div className="mt-2 text-[10px] text-zinc-600 uppercase tracking-widest text-center lg:hidden opacity-50 font-semibold">
         Swipe to select type

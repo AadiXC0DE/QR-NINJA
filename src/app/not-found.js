@@ -1,6 +1,6 @@
-import Link from "next/link";
-import Image from "next/image";
-import image1 from "../../public/image1.png";
+import Link from 'next/link';
+import Image from 'next/image';
+import image1 from '../../public/image1.png';
 
 export default function NotFound() {
   return (

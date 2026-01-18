@@ -1,25 +1,24 @@
-.PHONY: frontend-install frontend-start backend-install backend-start docker-up docker-down
+.PHONY: install dev build lint format help
 
-frontend-install:
-	cd qrninja && npm install
-
-frontend-start:
-	cd qrninja && npm run dev
-
-backend-install:
-	cd qrninja/backend && go mod tidy
-
-backend-start:
-	cd qrninja/backend && go run main.go
-
-docker-up:
-	cd qrninja/backend && docker-compose up -d
-
-docker-down:
-	cd qrninja/backend && docker-compose down
-
-start:
-	make frontend-start & make backend-start
+help:
+	@echo "Available commands:"
+	@echo "  make install  - Install dependencies"
+	@echo "  make dev      - Start development server"
+	@echo "  make build    - Build for production"
+	@echo "  make lint     - Run linter"
+	@echo "  make format   - Run prettier format"
 
 install:
-	make frontend-install & make backend-install
+	npm install
+
+dev:
+	npm run dev
+
+build:
+	npm run build
+
+lint:
+	npm run lint
+
+format:
+	npm run format

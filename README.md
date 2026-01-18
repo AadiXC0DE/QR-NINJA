@@ -1,185 +1,65 @@
-# QR-NINJA
+# QR-NINJA 🥷
+> **The Privacy-First, Professional QR Code Editor & Generator.**
 
-QR-NINJA is a web app built with Next.js, qrcode.react, Tailwind CSS, React Particles, and a backend using Go, Gin, and PostgreSQL to store QR data. It allows users to generate QR codes quickly and easily and store them securely in a database.
+QR-NINJA is a premium, **privacy-centric** tools suite built for creators, developers, and privacy advocates. Unlike traditional generators that track your scans or store your data on their servers, QR-NINJA operates **entirely in your browser**. Your data never leaves your device.
 
-## Features
+[![CI Status](https://github.com/AadiXC0DE/QR-NINJA/actions/workflows/ci.yml/badge.svg)](https://github.com/AadiXC0DE/QR-NINJA/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Privacy First](https://img.shields.io/badge/Privacy-First-green.svg)](#-why-qr-ninja)
 
-- Generate QR codes for various types of data, such as text, URLs, email addresses, phone numbers, and more.
-- Automatically saves generated QR codes to the local storage for easy access.
-- Backend support to store, fetch, and delete QR codes.
-- Clean and intuitive user interface.
-- Responsive design for seamless usage on different devices.
+---
 
-## Frontend Installation
+## 🔒 Why QR-NINJA?
 
-1. Clone the repository:
+In an era of digital tracking, QR-NINJA stands for absolute privacy. Most "free" generators capture your URLs, IP addresses, and scan metrics. **QR-NINJA captures nothing.**
 
-```sh
-git clone https://github.com/AadiXC0DE/QR-NINJA.git
-```
+- **Zero Server-Side Storage**: No databases, no tracking, no logs.
+- **Local-First Architecture**: Your generated codes and history stay in your browser's local storage.
+- **Open Source Security**: Transparent code you can trust and audit.
+- **Zero Latency**: Generation happens instantly on your CPU, not a remote server.
 
-2. Navigate to the project directory:
+## ✨ Premium Features
 
-```sh
-cd qrninja
-```
+- **Pro Customization**: Fine-tune colors, gradients, and logos with surgical precision.
+- **Brand Integration**: Seamlessly embed your brand's logo into any QR code.
+- **Batch Generation**: Create up to 50 QR codes at once for massive workflows.
+- **Error Correction**: Advanced levels (L, M, Q, H) to ensure readability even when damaged.
+- **Responsive by Design**: A sleek, high-performance UI that works on any device.
+- **Auto-Vault**: Your "Ninja History" is automatically saved locally for easy retrieval.
 
-3. Install the dependencies:
+## 🚀 Quick Start
 
-```sh
-npm install
-```
+Get your local instance running in seconds:
 
-4. Start the development server:
-
-```sh
-npm run dev
-```
-
-5. Open your web browser and visit `http://localhost:3000` to access QR-NINJA.
-
-## Backend Installation
-
-1. Navigate to the backend directory:
-
-```sh
-cd qrninja/backend
-```
-
-2. Create a `.env` file in the `backend` directory and add your database credentials:
-
-```env
-DB_USER=your-db-user
-DB_PASSWORD=your-db-password
-DB_NAME=qrninja
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-3. Install Go dependencies:
-
-```sh
-go mod tidy
-```
-
-4. Start the backend server:
-
-```sh
-go run main.go
-```
-
-The backend server will start on `http://localhost:8081`.
-
-## API Routes
-
-### Store QR Code
-- **Endpoint:** `POST /qr`
-- **Description:** Stores a QR code.
-- **Request Body:**
-  ```json
-  {
-    "userId": "string",
-    "uuid": "string",
-    "url": "string",
-    "date": "string",
-    "image": "string"
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "ID": "int",
-    "CreatedAt": "string",
-    "UpdatedAt": "string",
-    "DeletedAt": "string|null",
-    "userId": "string",
-    "uuid": "string",
-    "url": "string",
-    "date": "string",
-    "image": "string"
-  }
-  ```
-
-### Fetch QR Codes
-- **Endpoint:** `GET /qr/:userId`
-- **Description:** Fetches all QR codes for a specific user.
-- **Response:**
-  ```json
-  [
-    {
-      "ID": "int",
-      "CreatedAt": "string",
-      "UpdatedAt": "string",
-      "DeletedAt": "string|null",
-      "userId": "string",
-      "uuid": "string",
-      "url": "string",
-      "date": "string",
-      "image": "string"
-    }
-  ]
-  ```
-
-### Delete QR Code
-- **Endpoint:** `DELETE /qr/:userId/:uuid`
-- **Description:** Deletes a specific QR code for a user.
-- **Response:**
-  ```json
-  {
-    "message": "record deleted"
-  }
-  ```
-
-## Technologies Used
-
-### Frontend
-
-- [Next.js](https://nextjs.org) - A React framework for server-rendered applications.
-- [qrcode.react](https://www.npmjs.com/package/qrcode.react) - A React component to generate QR codes.
-- [Tailwind CSS](https://tailwindcss.com) - A utility-first CSS framework for rapid UI development.
-- [React Particles](https://www.npmjs.com/package/react-particles-js) - A React component for creating animated particles backgrounds.
-
-### Backend
-
-- [Go](https://golang.org) - The programming language used for backend development.
-- [Gin](https://github.com/gin-gonic/gin) - A web framework for Go.
-- [Gorm](https://gorm.io) - An ORM library for Go.
-- [PostgreSQL](https://www.postgresql.org) - A powerful, open-source object-relational database system.
-- [Docker](https://www.docker.com) - Container platform to run the backend and PostgreSQL.
-
-## Contributing
-
-Contributions to QR-NINJA are welcome! If you find any bugs or have suggestions for improvement, please open an issue on the [GitHub repository](https://github.com/AadiXC0DE/QR-NINJA/issues). If you'd like to contribute code, you can fork the repository, make your changes, and submit a pull request.
-
-
-### Makefile Usage
-
-1. **Install dependencies:**
+1. **Clone & Enter**:
    ```sh
-   make install
+   git clone https://github.com/AadiXC0DE/QR-NINJA.git && cd QR-NINJA
    ```
 
-2. **Start the services:**
+2. **Install & Launch**:
    ```sh
-   make start
+   npm install && npm run dev
    ```
 
-3. **Start the frontend only:**
-   ```sh
-   make frontend-start
-   ```
+3. **Go Live**: Open [localhost:3000](http://localhost:3000) and start creating.
 
-4. **Start the backend only:**
-   ```sh
-   make backend-start
-   ```
+## 🛠 Built With Excellence
 
-5. **Bring up Docker services:**
-   ```sh
-   make docker-up
-   ```
+- **Core**: [Next.js 13](https://nextjs.org) (App Router)
+- **Engine**: [qrcode.react](https://www.npmjs.com/package/qrcode.react)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com) + Dynamic Particles
+- **Performance**: Zero-latency client-side rendering
 
-6. **Bring down Docker services:**
-   ```sh
-   make docker-down
-   ```
+## 🤝 Contributing
+
+We love contributors! Whether you're fixing a bug or suggesting a new feature, your help is appreciated. Please check out our [CONTRIBUTING.md](./CONTRIBUTING.md) to get started.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'feat: Add AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+Designed with 🖤 for the privacy-conscious web. Built by the **QR-NINJA Team**.
