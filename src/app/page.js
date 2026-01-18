@@ -135,12 +135,11 @@ export default function Page() {
 
   const downloadQRCode = () => {
     if (qrRef.current) {
-      const canvas = qrRef.current.querySelector("canvas");
+      const canvas = qrRef.current.querySelector('canvas');
       if (canvas) {
         const image = canvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = image;
-        link.download = `QRCode-${qrType}.png`;
         link.download = `QRCode-${qrType}.png`;
         link.click();
       }
@@ -175,7 +174,6 @@ export default function Page() {
 
   return (
     <div className="h-screen flex flex-col bg-black text-white relative overflow-hidden">
-    <div className="h-screen flex flex-col bg-black text-white relative overflow-hidden">
       <Particles
         id="tsparticles"
         init={particlesInit}
@@ -205,7 +203,6 @@ export default function Page() {
           },
           detectRetina: true,
         }}
-        className="absolute inset-0 pointer-events-none"
         className="absolute inset-0 pointer-events-none"
       />
 
