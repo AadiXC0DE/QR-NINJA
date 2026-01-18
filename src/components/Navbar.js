@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 
 const Navbar = () => {
   const pathname = usePathname();
+  const pathname = usePathname();
 
   const navItems = [
     { name: 'Create', href: '/' },

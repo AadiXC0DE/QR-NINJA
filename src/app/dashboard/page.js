@@ -28,6 +28,9 @@ const initialQRCustomization = {
   logoSize: 20,
   logoPosition: 'center',
   logoPadding: 0,
+  logoSize: 20,
+  logoPosition: 'center',
+  logoPadding: 0,
   dimensions: 512,
   bgColor: '#FFFFFF',
   fgColor: '#000000',
@@ -65,6 +68,7 @@ const Dashboard = () => {
     initialModalState
   );
   const [customization, setCustomization] = useState(initialQRCustomization);
+  const qrRefs = useRef({});
   const qrRefs = useRef({});
 
   useEffect(() => {
@@ -117,12 +121,26 @@ const Dashboard = () => {
           link.click();
           toast.success('Downloaded as PNG (SVG not available for styled QR)');
         }
+        // For SVG, we fall back to just the QR canvas data
+        const qrCanvas = container.querySelector('canvas');
+        if (qrCanvas) {
+          const dataUrl = qrCanvas.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = dataUrl;
+          link.download = 'QRCode.png';
+          link.click();
+          toast.success('Downloaded as PNG (SVG not available for styled QR)');
+        }
       } else {
         canvas.toBlob((blob) => {
           saveAs(blob, `QRCode.${format}`);
           toast.success(`Downloaded as ${format.toUpperCase()}`);
+          toast.success(`Downloaded as ${format.toUpperCase()}`);
         }, `image/${format}`);
       }
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Download failed');
     } catch (err) {
       console.error('Download error:', err);
       toast.error('Download failed');
@@ -139,8 +157,13 @@ const Dashboard = () => {
 
   const handleEditQR = (item) => {
     const originalIndex = qrData.indexOf(item);
+  const handleEditQR = (item) => {
+    const originalIndex = qrData.indexOf(item);
     setCustomization({
       logo: item.logo || null,
+      logoSize: item.logoSize || 20,
+      logoPosition: item.logoPosition || 'center',
+      logoPadding: item.logoPadding || 0,
       logoSize: item.logoSize || 20,
       logoPosition: item.logoPosition || 'center',
       logoPadding: item.logoPadding || 0,
@@ -436,6 +459,7 @@ const Dashboard = () => {
       </div>
 
       {/* Download Modal - Same Premium Aesthetic */}
+      {/* Download Modal - Same Premium Aesthetic */}
       {modalState.download.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-sm bg-zinc-900/80 backdrop-blur-2xl rounded-[40px] border border-zinc-800 p-8 shadow-2xl">
@@ -464,6 +488,7 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Professional Edit Modal */}
       {/* Professional Edit Modal */}
       {modalState.edit.isOpen && modalState.edit.data && (
         <QRCustomizer
