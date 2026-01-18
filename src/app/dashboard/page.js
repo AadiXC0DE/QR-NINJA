@@ -3,12 +3,11 @@ import { useState, useEffect, useMemo, useCallback, useReducer, useRef } from "r
 import QRCode from "qrcode.react";
 import Navbar from "@/components/Navbar";
 import ShareButton from "@/components/ShareButton";
-import StyleTemplates from "@/components/StyleTemplates";
+import QRCustomizer from "@/components/QRCustomizer";
 import { formatDistanceToNow } from "date-fns";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { saveAs } from "file-saver";
-import { debounce } from "lodash";
 import { QR_TYPE_CONFIG } from "@/utils/qrDataEncoders";
 
 const initialModalState = {
@@ -18,10 +17,18 @@ const initialModalState = {
 
 const initialQRCustomization = {
   logo: null,
-  isCentered: true,
-  dimensions: 400,
+  logoSize: 20,
+  logoPosition: 'center',
+  logoPadding: 0,
+  dimensions: 512,
   bgColor: "#FFFFFF",
-  fgColor: "#000000"
+  fgColor: "#000000",
+  errorCorrection: 'M',
+  margin: 4,
+  frameStyle: 'none',
+  frameColor: '#000000',
+  ctaText: '',
+  ctaPosition: 'bottom'
 };
 
 const modalReducer = (state, action) => {
@@ -83,10 +90,18 @@ const Dashboard = () => {
     const originalIndex = qrData.indexOf(item);
     setCustomization({
       logo: item.logo || null,
-      isCentered: item.isCentered ?? true,
-      dimensions: item.dimensions || 400,
+      logoSize: item.logoSize || 20,
+      logoPosition: item.logoPosition || 'center',
+      logoPadding: item.logoPadding || 0,
+      dimensions: item.dimensions || 512,
       bgColor: item.bgColor || "#FFFFFF",
-      fgColor: item.fgColor || "#000000"
+      fgColor: item.fgColor || "#000000",
+      errorCorrection: item.errorCorrection || 'M',
+      margin: item.margin || 4,
+      frameStyle: item.frameStyle || 'none',
+      frameColor: item.frameColor || '#000000',
+      ctaText: item.ctaText || '',
+      ctaPosition: item.ctaPosition || 'bottom'
     });
     dispatchModal({ type: 'OPEN_EDIT', payload: { ...item, index: originalIndex } });
   };
@@ -218,43 +233,15 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Edit Modal - Same Premium Aesthetic */}
+      {/* Professional Edit Modal */}
       {modalState.edit.isOpen && modalState.edit.data && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-fadeIn overflow-y-auto">
-          <div className="w-full max-w-4xl bg-zinc-900 rounded-[40px] border border-zinc-800 shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh]">
-            <div className="flex-1 p-8 overflow-y-auto no-scrollbar">
-              <h3 className="text-2xl font-bold mb-8">Refine <span className="text-zinc-500">Code</span></h3>
-              <div className="space-y-10">
-                <StyleTemplates onSelectTemplate={handleTemplateSelect} currentBgColor={customization.bgColor} currentFgColor={customization.fgColor} />
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-2">Background</label>
-                    <div className="flex gap-2">
-                       <input type="color" value={customization.bgColor} onChange={e => handleCustomizationChange('bgColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer bg-transparent" />
-                       <input type="text" value={customization.bgColor} onChange={e => handleCustomizationChange('bgColor', e.target.value)} className="flex-1 bg-zinc-800 rounded-xl px-4 text-xs font-mono" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-2">Foreground</label>
-                    <div className="flex gap-2">
-                       <input type="color" value={customization.fgColor} onChange={e => handleCustomizationChange('fgColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer bg-transparent" />
-                       <input type="text" value={customization.fgColor} onChange={e => handleCustomizationChange('fgColor', e.target.value)} className="flex-1 bg-zinc-800 rounded-xl px-4 text-xs font-mono" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={saveQREdit} className="flex-1 py-4 bg-white text-black font-bold rounded-2xl">Save Changes</button>
-                  <button onClick={() => dispatchModal({ type: 'CLOSE_EDIT' })} className="px-8 py-4 bg-zinc-800 font-bold rounded-2xl">Cancel</button>
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 bg-zinc-800/30 flex items-center justify-center p-12">
-              <div className="p-8 rounded-[40px] shadow-2xl" style={{ backgroundColor: customization.bgColor }}>
-                <QRCode value={modalState.edit.data.data} size={240} bgColor={customization.bgColor} fgColor={customization.fgColor} level="H" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <QRCustomizer
+          qrData={modalState.edit.data.data}
+          customization={customization}
+          onChange={setCustomization}
+          onSave={saveQREdit}
+          onCancel={() => dispatchModal({ type: 'CLOSE_EDIT' })}
+        />
       )}
 
       <style jsx>{`

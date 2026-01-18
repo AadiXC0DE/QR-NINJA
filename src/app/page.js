@@ -27,6 +27,14 @@ export default function Page() {
   const [customization, setCustomization] = useState({
     bgColor: "#FFFFFF",
     fgColor: "#000000",
+    logo: null,
+    logoSize: 20,
+    logoPosition: 'center',
+    errorCorrection: 'M',
+    frameStyle: 'none',
+    frameColor: '#000000',
+    ctaText: '',
+    ctaPosition: 'bottom',
   });
   const qrRef = useRef(null);
 
@@ -243,14 +251,41 @@ export default function Page() {
               >
                 {/* Visual Polish: Inner shadow/glow */}
                 <div className="absolute inset-0 rounded-[40px] shadow-[inset_0_0_80px_rgba(0,0,0,0.05)] pointer-events-none" />
+                
+                {/* CTA Top */}
+                {customization.ctaText && customization.ctaPosition === 'top' && (
+                  <p className="text-center font-bold text-sm mb-4" style={{ color: customization.fgColor }}>
+                    {customization.ctaText}
+                  </p>
+                )}
+                
                 <QRCode
                   value={qrValue}
                   size={260}
                   bgColor={customization.bgColor}
                   fgColor={customization.fgColor}
                   renderAs="canvas"
-                  level="H"
+                  level={customization.errorCorrection || 'M'}
+                  imageSettings={
+                    customization.logo
+                      ? {
+                          src: customization.logo,
+                          height: Math.floor(260 * (customization.logoSize || 20) / 100),
+                          width: Math.floor(260 * (customization.logoSize || 20) / 100),
+                          excavate: true,
+                          x: customization.logoPosition === 'corner' ? 10 : undefined,
+                          y: customization.logoPosition === 'corner' ? 10 : undefined,
+                        }
+                      : undefined
+                  }
                 />
+                
+                {/* CTA Bottom */}
+                {customization.ctaText && (customization.ctaPosition || 'bottom') === 'bottom' && (
+                  <p className="text-center font-bold text-sm mt-4" style={{ color: customization.fgColor }}>
+                    {customization.ctaText}
+                  </p>
+                )}
               </div>
               
               <div className="flex flex-col gap-3 w-full max-w-[280px]">
