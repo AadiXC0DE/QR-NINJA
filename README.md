@@ -1,6 +1,6 @@
 # QR-NINJA
 
-QR-NINJA is a web application built with Next.js, qrcode.react, Tailwind CSS, React Particles, and a backend using Go, Gin, and PostgreSQL to store QR data. It allows users to generate QR codes quickly and easily and store them securely in a database.
+QR-NINJA is a web app built with Next.js, qrcode.react, Tailwind CSS, React Particles, and a backend using Go, Gin, and PostgreSQL to store QR data. It allows users to generate QR codes quickly and easily and store them securely in a database.
 
 ## Features
 
@@ -151,10 +151,6 @@ The backend server will start on `http://localhost:8081`.
 
 Contributions to QR-NINJA are welcome! If you find any bugs or have suggestions for improvement, please open an issue on the [GitHub repository](https://github.com/AadiXC0DE/QR-NINJA/issues). If you'd like to contribute code, you can fork the repository, make your changes, and submit a pull request.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
 
 ### Makefile Usage
 
@@ -187,4 +183,3 @@ This project is licensed under the [MIT License](LICENSE).
    ```sh
    make docker-down
    ```
-
